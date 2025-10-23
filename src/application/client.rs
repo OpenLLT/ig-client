@@ -590,4 +590,15 @@ impl OrderService for Client {
         );
         Ok(result)
     }
+
+    async fn delete_working_order(&self, deal_id: &str) -> Result<(), AppError> {
+        let path = format!("workingorders/otc/{}", deal_id);
+        let result: CreateWorkingOrderResponse =
+            self.http_client.delete(path.as_str(), Some(2)).await?;
+        debug!(
+            "Working order created with reference: {}",
+            result.deal_reference
+        );
+        Ok(())
+    }
 }

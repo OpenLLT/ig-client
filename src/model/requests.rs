@@ -4,7 +4,7 @@
    Date: 19/10/25
 ******************************************************************************/
 use crate::constants::{DEFAULT_ORDER_BUY_LEVEL, DEFAULT_ORDER_SELL_LEVEL};
-use crate::prelude::{Deserialize, Serialize};
+use crate::prelude::{Deserialize, Serialize, WorkingOrder};
 use crate::presentation::order::{Direction, OrderType, TimeInForce};
 use pretty_simple_display::DisplaySimple;
 
@@ -692,13 +692,45 @@ pub struct CreateWorkingOrderRequest {
     #[serde(rename = "dealReference", skip_serializing_if = "Option::is_none")]
     pub deal_reference: Option<String>,
     /// Currency code for the order (e.g., "USD", "EUR")
-    #[serde(rename = "currencyCode", skip_serializing_if = "Option::is_none")]
-    pub currency_code: Option<String>,
+    #[serde(rename = "currencyCode")]
+    pub currency_code: String,
+    /// Expiry date for the order
+    pub expiry: String,
+}
+
+impl From<WorkingOrder> for CreateWorkingOrderRequest {
+    fn from(value: WorkingOrder) -> Self {
+        let data = value.working_order_data;
+        Self {
+            epic: data.epic,
+            direction: data.direction,
+            size: data.order_size,
+            level: data.order_level,
+            order_type: data.order_type,
+            time_in_force: data.time_in_force,
+            guaranteed_stop: Some(data.guaranteed_stop),
+            stop_level: data.stop_level,
+            stop_distance: data.stop_distance,
+            limit_level: data.limit_level,
+            limit_distance: data.limit_distance,
+            good_till_date: data.good_till_date,
+            deal_reference: data.deal_reference,
+            currency_code: data.currency_code,
+            expiry: value.market_data.expiry,
+        }
+    }
 }
 
 impl CreateWorkingOrderRequest {
     /// Creates a new limit working order
-    pub fn limit(epic: String, direction: Direction, size: f64, level: f64) -> Self {
+    pub fn limit(
+        epic: String,
+        direction: Direction,
+        size: f64,
+        level: f64,
+        currency_code: String,
+        expiry: String,
+    ) -> Self {
         Self {
             epic,
             direction,
@@ -706,19 +738,27 @@ impl CreateWorkingOrderRequest {
             level,
             order_type: OrderType::Limit,
             time_in_force: TimeInForce::GoodTillCancelled,
-            guaranteed_stop: None,
+            guaranteed_stop: Some(false),
             stop_level: None,
             stop_distance: None,
             limit_level: None,
             limit_distance: None,
             good_till_date: None,
             deal_reference: None,
-            currency_code: None,
+            currency_code,
+            expiry,
         }
     }
 
     /// Creates a new stop working order
-    pub fn stop(epic: String, direction: Direction, size: f64, level: f64) -> Self {
+    pub fn stop(
+        epic: String,
+        direction: Direction,
+        size: f64,
+        level: f64,
+        currency_code: String,
+        expiry: String,
+    ) -> Self {
         Self {
             epic,
             direction,
@@ -726,14 +766,15 @@ impl CreateWorkingOrderRequest {
             level,
             order_type: OrderType::Stop,
             time_in_force: TimeInForce::GoodTillCancelled,
-            guaranteed_stop: None,
+            guaranteed_stop: Some(false),
             stop_level: None,
             stop_distance: None,
             limit_level: None,
             limit_distance: None,
             good_till_date: None,
             deal_reference: None,
-            currency_code: None,
+            currency_code,
+            expiry,
         }
     }
 

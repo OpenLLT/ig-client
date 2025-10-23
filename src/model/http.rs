@@ -126,8 +126,13 @@ impl HttpClient {
     }
 
     /// Makes a DELETE request
-    pub async fn delete<T: DeserializeOwned>(&self, path: &str) -> Result<T, AppError> {
-        self.request(Method::DELETE, path, None::<()>, None).await
+    pub async fn delete<T: DeserializeOwned>(
+        &self,
+        path: &str,
+        version: Option<u8>,
+    ) -> Result<T, AppError> {
+        self.request(Method::DELETE, path, None::<()>, version)
+            .await
     }
 
     /// Makes a POST request with _method: DELETE header

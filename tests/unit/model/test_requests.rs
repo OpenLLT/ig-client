@@ -186,6 +186,8 @@ fn create_working_order_builders() {
         Direction::Buy,
         1.0,
         17000.0,
+        "EUR".to_string(),
+        "24-OCT-25".to_string(),
     )
     .with_stop_loss(16900.0)
     .with_take_profit(18000.0)
@@ -204,6 +206,8 @@ fn create_working_order_builders() {
         Direction::Sell,
         2.0,
         16500.0,
+        "EUR".to_string(),
+        "24-OCT-25".to_string(),
     );
     assert_eq!(ws.order_type, OrderType::Stop);
     assert_eq!(ws.time_in_force, TimeInForce::GoodTillCancelled);
