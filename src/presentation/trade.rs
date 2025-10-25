@@ -1,11 +1,10 @@
 use crate::presentation::order::{Direction, OrderType, Status, TimeInForce};
 use crate::presentation::serialization::{option_string_empty_as_none, string_as_float_opt};
 use lightstreamer_rs::subscription::ItemUpdate;
+use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::collections::HashMap;
-use std::fmt;
-use pretty_simple_display::{DebugPretty, DisplaySimple};
 
 /// Main structure for trade data received from the IG Markets API
 /// Contains information about trades, positions and working orders

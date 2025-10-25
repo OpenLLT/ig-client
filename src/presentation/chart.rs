@@ -1,9 +1,8 @@
 use crate::presentation::serialization::string_as_float_opt;
 use lightstreamer_rs::subscription::ItemUpdate;
+use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fmt;
-use pretty_simple_display::{DebugPretty, DisplaySimple};
 
 /// Time scale for chart data aggregation
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]

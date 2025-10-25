@@ -1,9 +1,9 @@
 use crate::presentation::instrument::InstrumentType;
 use crate::presentation::serialization::{string_as_bool_opt, string_as_float_opt};
 use lightstreamer_rs::subscription::ItemUpdate;
+use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use pretty_simple_display::{DebugPretty, DisplaySimple};
 
 /// Model for a market instrument with enhanced deserialization
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, PartialEq)]

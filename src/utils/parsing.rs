@@ -1,8 +1,7 @@
 use crate::presentation::order::Status;
+use pretty_simple_display::{DebugPretty, DisplaySimple};
 use regex::Regex;
 use serde::{Deserialize, Deserializer, Serialize};
-use std::fmt;
-use pretty_simple_display::{DebugPretty, DisplaySimple};
 use tracing::warn;
 
 /// Structure to represent the parsed option information from an instrument name

@@ -7,9 +7,11 @@ use crate::constants::{DEFAULT_ORDER_BUY_LEVEL, DEFAULT_ORDER_SELL_LEVEL};
 use crate::prelude::{Deserialize, Serialize, WorkingOrder};
 use crate::presentation::order::{Direction, OrderType, TimeInForce};
 use pretty_simple_display::{DebugPretty, DisplaySimple};
+use std::fmt;
+use std::fmt::{Debug, Display};
 
 /// Parameters for getting recent prices (API v3)
-#[derive(DebugPretty, DisplaySimple, Clone, Default, Deserialize, Serialize)]
+#[derive(Clone, Default, Deserialize, Serialize)]
 pub struct RecentPricesRequest<'a> {
     /// Instrument epic
     pub epic: &'a str,
@@ -70,6 +72,21 @@ impl<'a> RecentPricesRequest<'a> {
     pub fn with_page_number(mut self, page_number: i32) -> Self {
         self.page_number = Some(page_number);
         self
+    }
+}
+
+impl Display for RecentPricesRequest<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let json = serde_json::to_string(self).unwrap_or_else(|_| "Invalid JSON".to_string());
+        write!(f, "{}", json)
+    }
+}
+
+impl Debug for RecentPricesRequest<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let json =
+            serde_json::to_string_pretty(self).unwrap_or_else(|_| "Invalid JSON".to_string());
+        write!(f, "{}", json)
     }
 }
 
