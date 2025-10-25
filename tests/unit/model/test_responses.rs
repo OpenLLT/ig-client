@@ -139,8 +139,9 @@ fn multiple_market_details_response_helpers_and_display() {
     assert_eq!(resp.iter().count(), 1);
 
     let s = format!("{}", resp);
-    // Now using JSON format from DisplaySimple
-    assert!(s.contains("marketDetails"));
+    assert!(s.contains("INSTRUMENT NAME"));
+    assert!(s.contains("EPIC"));
+    assert!(s.contains("HIGH/LOW"));
     assert!(s.contains("Germany 40 Cash"));
     assert!(s.contains("IX.D.DAX.IFD.IP"));
 }
@@ -211,14 +212,14 @@ fn historical_prices_response_helpers_and_display() {
     assert_eq!(resp.iter().count(), 2);
 
     let s = format!("{}", resp);
-    // Now using JSON format from DisplaySimple
-    assert!(s.contains("prices"));
+    assert!(s.contains("SNAPSHOT TIME"));
+    assert!(s.contains("OPEN BID"));
     assert!(s.contains("1.1234"));
     assert!(s.contains("1.2232"));
-    assert!(s.contains("instrumentType"));
+    assert!(s.contains("Total price points: 2"));
+    assert!(s.contains("Instrument type:"));
     assert!(s.contains("CURRENCIES"));
-    assert!(s.contains("remainingAllowance"));
-    assert!(s.contains("99"));
+    assert!(s.contains("Remaining allowance: 99"));
 }
 
 #[test]
@@ -263,10 +264,10 @@ fn market_search_response_helpers_and_display() {
     assert_eq!(resp.iter().count(), 2);
 
     let s = format!("{}", resp);
-    // Now using JSON format from DisplaySimple
-    assert!(s.contains("markets"));
-    assert!(s.contains("epic"));
-    assert!(s.contains("instrumentType"));
+    assert!(s.contains("INSTRUMENT NAME"));
+    assert!(s.contains("EPIC"));
+    assert!(s.contains("TYPE"));
+    assert!(s.contains("Total markets found: 2"));
 }
 
 #[test]
