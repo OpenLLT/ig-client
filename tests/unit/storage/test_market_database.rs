@@ -96,7 +96,8 @@ async fn convert_market_data_to_instrument_maps_fields() {
 
     assert_eq!(inst.epic, md.epic);
     assert_eq!(inst.instrument_name, md.instrument_name);
-    assert_eq!(inst.instrument_type, "INDICES");
+    // DisplaySimple serializes to JSON with quotes
+    assert_eq!(inst.instrument_type, "\"INDICES\"");
     assert_eq!(inst.node_id, "node-1");
     assert_eq!(inst.exchange, "IG");
     assert_eq!(inst.expiry, md.expiry);

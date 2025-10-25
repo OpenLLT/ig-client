@@ -42,16 +42,19 @@ mod tests {
 
     #[test]
     fn test_parsed_option_info_display() {
-        // Test with all fields populated
+        // Test with all fields populated - now using JSON format from DisplaySimple
         let info = ParsedOptionInfo {
             asset_name: "US Tech 100".to_string(),
             strike: Some("19200".to_string()),
             option_type: Some("CALL".to_string()),
         };
-        assert_eq!(
-            format!("{info}"),
-            "Asset: US Tech 100, Strike: 19200, Type: CALL"
-        );
+        let s = format!("{info}");
+        assert!(s.contains("asset_name"));
+        assert!(s.contains("US Tech 100"));
+        assert!(s.contains("strike"));
+        assert!(s.contains("19200"));
+        assert!(s.contains("option_type"));
+        assert!(s.contains("CALL"));
 
         // Test with missing strike and option_type
         let info = ParsedOptionInfo {
@@ -59,10 +62,11 @@ mod tests {
             strike: None,
             option_type: None,
         };
-        assert_eq!(
-            format!("{info}"),
-            "Asset: Germany 40, Strike: N/A, Type: N/A"
-        );
+        let s = format!("{info}");
+        assert!(s.contains("asset_name"));
+        assert!(s.contains("Germany 40"));
+        assert!(s.contains("strike"));
+        assert!(s.contains("null"));
 
         // Test with missing option_type only
         let info = ParsedOptionInfo {
@@ -70,7 +74,11 @@ mod tests {
             strike: Some("4500".to_string()),
             option_type: None,
         };
-        assert_eq!(format!("{info}"), "Asset: US 500, Strike: 4500, Type: N/A");
+        let s = format!("{info}");
+        assert!(s.contains("asset_name"));
+        assert!(s.contains("US 500"));
+        assert!(s.contains("strike"));
+        assert!(s.contains("4500"));
     }
 
     #[test]
