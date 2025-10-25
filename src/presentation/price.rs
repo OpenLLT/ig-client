@@ -46,7 +46,7 @@ pub struct PriceData {
 }
 
 /// Price field data containing bid, offer, and market status information
-#[derive(DebugPretty, Clone, DisplaySimple, Serialize, Deserialize, Default)]
+#[derive(DebugPretty, Clone, Serialize, Deserialize, Default)]
 pub struct PriceFields {
     #[serde(rename = "MID_OPEN")]
     #[serde(with = "string_as_float_opt")]
@@ -399,6 +399,24 @@ impl PriceData {
 
 impl From<&ItemUpdate> for PriceData {
     fn from(item_update: &ItemUpdate) -> Self {
-        Self::from_item_update(item_update).unwrap_or_default()
+        PriceData::from_item_update(item_update).unwrap_or_default()
+    }
+}
+
+impl std::fmt::Display for PriceFields {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "PriceFields {{ mid_open: {:?}, high: {:?}, low: {:?}, bid_quote_id: {:?}, ask_quote_id: {:?}, bid_price1: {:?}, ask_price1: {:?}, timestamp: {:?}, dealing_flag: {:?} }}",
+            self.mid_open,
+            self.high,
+            self.low,
+            self.bid_quote_id,
+            self.ask_quote_id,
+            self.bid_price1,
+            self.ask_price1,
+            self.timestamp,
+            self.dealing_flag
+        )
     }
 }

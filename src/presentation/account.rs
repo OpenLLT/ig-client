@@ -580,15 +580,15 @@ pub struct AccountTransaction {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AccountData {
     /// Name of the item this data belongs to
-    item_name: String,
+    pub item_name: String,
     /// Position of the item in the subscription
-    item_pos: i32,
+    pub item_pos: i32,
     /// All account fields
-    fields: AccountFields,
+    pub fields: AccountFields,
     /// Fields that have changed in this update
-    changed_fields: AccountFields,
+    pub changed_fields: AccountFields,
     /// Whether this is a snapshot or an update
-    is_snapshot: bool,
+    pub is_snapshot: bool,
 }
 
 /// Fields containing account financial information
@@ -735,8 +735,32 @@ impl AccountData {
 
 impl fmt::Display for AccountData {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let json = serde_json::to_string(self).map_err(|_| fmt::Error)?;
-        write!(f, "{json}")
+        write!(
+            f,
+            "AccountData {{ item_name: {}, item_pos: {}, fields: {:?}, changed_fields: {:?}, is_snapshot: {} }}",
+            self.item_name, self.item_pos, self.fields, self.changed_fields, self.is_snapshot
+        )
+    }
+}
+
+impl fmt::Display for AccountFields {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "AccountFields {{ pnl: {:?}, deposit: {:?}, available_cash: {:?}, pnl_lr: {:?}, pnl_nlr: {:?}, funds: {:?}, margin: {:?}, margin_lr: {:?}, margin_nlr: {:?}, available_to_deal: {:?}, equity: {:?}, equity_used: {:?} }}",
+            self.pnl,
+            self.deposit,
+            self.available_cash,
+            self.pnl_lr,
+            self.pnl_nlr,
+            self.funds,
+            self.margin,
+            self.margin_lr,
+            self.margin_nlr,
+            self.available_to_deal,
+            self.equity,
+            self.equity_used
+        )
     }
 }
 

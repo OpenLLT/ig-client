@@ -10,33 +10,29 @@ use std::collections::HashMap;
 /// Contains information about trades, positions and working orders
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default)]
 pub struct TradeData {
-    /// Name of the item (usually the trade ID)
     pub item_name: String,
     /// Position of the item in the subscription
     pub item_pos: i32,
-    /// All trade fields for this item
+    /// Trade fields data
     pub fields: TradeFields,
-    /// Fields that have changed in this update
+    /// Changed fields data
     pub changed_fields: TradeFields,
-    /// Whether this is a snapshot or an update
+    /// Whether this is a snapshot
     pub is_snapshot: bool,
 }
 
 /// Main fields for a trade update, containing core trade data.
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "UPPERCASE")]
 pub struct TradeFields {
     /// Optional confirmation details for the trade.
-    #[serde(rename = "CONFIRMS")]
-    #[serde(with = "option_string_empty_as_none")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub confirms: Option<String>,
     /// Optional open position update details.
-    #[serde(rename = "OPU")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub opu: Option<OpenPositionUpdate>,
     /// Optional working order update details.
-    #[serde(rename = "WOU")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub wou: Option<WorkingOrderUpdate>,
 }
 

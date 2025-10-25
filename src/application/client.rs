@@ -22,10 +22,14 @@ use crate::model::responses::{
     MultipleMarketDetailsResponse,
 };
 use crate::model::streaming::{
-    get_streaming_account_data_fields, get_streaming_market_fields, get_streaming_price_fields,
     StreamingAccountDataField, StreamingMarketField, StreamingPriceField,
+    get_streaming_account_data_fields, get_streaming_market_fields, get_streaming_price_fields,
 };
-use crate::prelude::{AccountActivityResponse, AccountFields, AccountsResponse, ListenerResult, OrderConfirmationResponse, PositionsResponse, TradeFields, TransactionHistoryResponse, WorkingOrdersResponse};
+use crate::prelude::{
+    AccountActivityResponse, AccountFields, AccountsResponse, ListenerResult,
+    OrderConfirmationResponse, PositionsResponse, TradeFields, TransactionHistoryResponse,
+    WorkingOrdersResponse,
+};
 use crate::presentation::market::{MarketData, MarketDetails};
 use crate::presentation::price::PriceData;
 use async_trait::async_trait;
@@ -35,7 +39,7 @@ use lightstreamer_rs::utils::setup_signal_hook;
 use serde_json::Value;
 use std::collections::HashSet;
 use std::sync::Arc;
-use tokio::sync::{Mutex, Notify, RwLock};
+use tokio::sync::{Notify, RwLock};
 use tracing::{debug, error, info, warn};
 
 const MAX_CONNECTION_ATTEMPTS: u64 = 3;
@@ -659,8 +663,6 @@ impl StreamerClient {
             Some(&password),
         )?));
 
-
-
         Ok(Self {
             account_id: ws_info.account_id.clone(),
             market_streamer_client: Some(market_streamer_client),
@@ -690,22 +692,6 @@ impl StreamerClient {
     /// Returns `Ok(())` if the subscription was successfully created, or an error if
     /// the subscription setup failed.
     ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # use ig_client::prelude::*;
-    /// # async fn example() -> Result<(), AppError> {
-    /// let mut client = StreamerClient::new().await?;
-    /// let epics = vec!["IX.D.DAX.DAILY.IP".to_string()];
-    /// let fields = HashSet::from([StreamingMarketField::Bid, StreamingMarketField::Offer]);
-    ///
-    /// client.market_subscribe(epics, fields, |price_data| {
-    ///     println!("Received price update: {:?}", price_data);
-    ///     ListenerResult::Continue
-    /// }).await?;
-    /// # Ok(())
-    /// # }
-    /// ```
     pub async fn market_subscribe<F>(
         &mut self,
         epics: Vec<String>,
@@ -718,7 +704,10 @@ impl StreamerClient {
         // Create listener and subscription
         let listener = Listener::new(callback);
         let fields = get_streaming_market_fields(&fields);
-        let market_epics: Vec<String> = epics.iter().map(|epic| "MARKET:".to_string() + epic).collect();
+        let market_epics: Vec<String> = epics
+            .iter()
+            .map(|epic| "MARKET:".to_string() + epic)
+            .collect();
         let mut subscription =
             Subscription::new(SubscriptionMode::Merge, Some(market_epics), Some(fields))?;
 
@@ -775,15 +764,14 @@ impl StreamerClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn trade_subscribe<F>(
-        &mut self,
-        callback: F,
-    ) -> Result<(), AppError>
+    pub async fn trade_subscribe<F>(&mut self, callback: F) -> Result<(), AppError>
     where
         F: Fn(&TradeFields) -> ListenerResult + Send + Sync + 'static,
     {
-        // Create listener and subscription
-        let listener = Listener::new(callback);
+        // Create listener and subscription with TradeData wrapper
+        let trade_callback =
+            move |trade_data: &crate::presentation::trade::TradeData| callback(&trade_data.fields);
+        let listener = Listener::new(trade_callback);
         let account_id = self.account_id.clone();
         let fields = Some(vec![
             "CONFIRMS".to_string(),
@@ -860,8 +848,11 @@ impl StreamerClient {
     where
         F: Fn(&AccountFields) -> ListenerResult + Send + Sync + 'static,
     {
-        // Create listener and subscription
-        let listener = Listener::new(callback);
+        // Create listener and subscription with AccountData wrapper
+        let account_callback = move |account_data: &crate::presentation::account::AccountData| {
+            callback(&account_data.fields)
+        };
+        let listener = Listener::new(account_callback);
         let fields = get_streaming_account_data_fields(&fields);
         let account_id = self.account_id.clone();
         let account_items = vec![format!("ACCOUNT:{account_id}")];
@@ -1024,7 +1015,7 @@ impl StreamerClient {
         if let Some(client) = self.market_streamer_client.as_ref() {
             let client = Arc::clone(client);
             let signal = Arc::clone(&signal);
-            let task = tokio::spawn(async move {
+            let task = tokio::task::spawn_local(async move {
                 Self::connect_client(client, signal, "Market").await
             });
             tasks.push(task);
@@ -1034,7 +1025,7 @@ impl StreamerClient {
         if let Some(client) = self.price_streamer_client.as_ref() {
             let client = Arc::clone(client);
             let signal = Arc::clone(&signal);
-            let task = tokio::spawn(async move {
+            let task = tokio::task::spawn_local(async move {
                 Self::connect_client(client, signal, "Price").await
             });
             tasks.push(task);
