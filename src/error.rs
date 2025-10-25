@@ -161,6 +161,7 @@ pub enum AppError {
     ///     that were violated.
     ///
     InvalidInput(String),
+    Generic(String),
 }
 
 impl Display for AppError {
@@ -179,6 +180,7 @@ impl Display for AppError {
             AppError::WebSocketError(s) => write!(f, "websocket error: {s}"),
             AppError::Deserialization(s) => write!(f, "deserialization error: {s}"),
             AppError::InvalidInput(s) => write!(f, "invalid input: {s}"),
+            AppError::Generic(s) => write!(f, "generic error: {s}"),
         }
     }
 }
@@ -230,5 +232,10 @@ impl From<Box<dyn std::error::Error>> for AppError {
                 },
             },
         }
+    }
+}
+impl From<String> for AppError {
+    fn from(e: String) -> Self {
+        AppError::Generic(e)
     }
 }

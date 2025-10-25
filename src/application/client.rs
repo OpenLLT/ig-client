@@ -3,6 +3,7 @@
    Email: jb@taunais.com
    Date: 19/10/25
 ******************************************************************************/
+use std::collections::HashSet;
 use crate::application::auth::WebsocketInfo;
 use crate::application::interfaces::account::AccountService;
 use crate::application::interfaces::market::MarketService;
@@ -20,15 +21,21 @@ use crate::model::responses::{
     DBEntryResponse, HistoricalPricesResponse, MarketNavigationResponse, MarketSearchResponse,
     MultipleMarketDetailsResponse,
 };
-use crate::prelude::{
-    AccountActivityResponse, AccountsResponse, OrderConfirmationResponse, PositionsResponse,
-    TransactionHistoryResponse, WorkingOrdersResponse,
-};
+use crate::prelude::{AccountActivityResponse, AccountsResponse, ListenerResult, OrderConfirmationResponse, PositionsResponse, TransactionHistoryResponse, WorkingOrdersResponse};
 use crate::presentation::market::{MarketData, MarketDetails};
 use async_trait::async_trait;
+use lightstreamer_rs::client::{LightstreamerClient, Transport};
 use serde_json::Value;
 use std::sync::Arc;
-use tracing::{debug, info};
+use lightstreamer_rs::subscription::{Snapshot, Subscription, SubscriptionMode};
+use lightstreamer_rs::utils::setup_signal_hook;
+use tokio::sync::{Notify, RwLock};
+use tracing::{debug, error, info, warn};
+use crate::application::interfaces::listener::Listener;
+use crate::model::streaming::{get_streaming_market_fields, StreamingMarketField};
+use crate::presentation::price::PriceData;
+
+const MAX_CONNECTION_ATTEMPTS: u64 = 3;
 
 /// Main client for interacting with IG Markets API
 ///
@@ -599,6 +606,101 @@ impl OrderService for Client {
             "Working order created with reference: {}",
             result.deal_reference
         );
+        Ok(())
+    }
+}
+
+pub struct StreamerClient {
+    http_client: Arc<RwLock<Client>>,
+    streamer_client: Arc<RwLock<LightstreamerClient>>,
+}
+
+impl StreamerClient {
+    async fn new() -> Result<Self, AppError> {
+        let http_client_raw = Arc::new(RwLock::new(Client::new()));
+        let http_client = http_client_raw.read().await;
+        let ws_info = http_client.get_ws_info().await;
+        let password = ws_info.get_ws_password();
+        let client = Arc::new(RwLock::new(LightstreamerClient::new(
+            Some(ws_info.server.as_str()),
+            None,
+            Some(&ws_info.account_id),
+            Some(&password),
+        )?));
+        Ok(Self {
+            http_client: http_client_raw.clone(),
+            streamer_client: client,
+        })
+    }
+
+    async fn default() -> Result<Self, AppError> {
+        Self::new().await
+    }
+    
+    async fn market_subscribe<F>(&mut self, epics: Vec<String>, fields: HashSet<StreamingMarketField>, callback: F) -> Result<(), AppError>
+    where
+        F: Fn(&PriceData) -> ListenerResult + Send + Sync + 'static,
+    {
+        let listener = Listener::new(callback);
+        let fields = get_streaming_market_fields(&fields);
+        let mut subscription = Subscription::new(
+            SubscriptionMode::Merge,
+            Some(epics),
+            Some(fields),
+        )?;
+        
+        subscription.set_data_adapter(None)?;
+        subscription.set_requested_snapshot(Some(Snapshot::Yes))?;
+        subscription.add_listener(Box::new(listener));
+
+        {
+            let mut client = self.streamer_client.write().await;
+            LightstreamerClient::subscribe(client.subscription_sender.clone(), subscription).await;
+            client
+                .connection_options
+                .set_forced_transport(Some(Transport::WsStreaming));
+        }
+        info!("Subscription added ");
+
+        // Create a new Notify instance to send a shutdown signal to the signal handler thread.
+        let shutdown_signal = Arc::new(Notify::new());
+        // Spawn a new thread to handle SIGINT and SIGTERM process signals.
+        setup_signal_hook(Arc::clone(&shutdown_signal)).await;
+        
+        //
+        // Infinite loop that will indefinitely retry failed connections unless
+        // a SIGTERM or SIGINT signal is received.
+        //
+        let mut retry_interval_milis: u64 = 0;
+        let mut retry_counter: u64 = 0;
+        while retry_counter < MAX_CONNECTION_ATTEMPTS {
+            let mut client = self.streamer_client.write().await;
+            match client.connect_direct(Arc::clone(&shutdown_signal)).await {
+                Ok(_) => {
+                    client.disconnect().await;
+                    break;
+                }
+                Err(e) => {
+                    error!("Failed to connect: {:?}", e);
+                    tokio::time::sleep(std::time::Duration::from_millis(retry_interval_milis)).await;
+                    retry_interval_milis = (retry_interval_milis + (200 * retry_counter)).min(5000);
+                    retry_counter += 1;
+                    warn!(
+                    "Retrying connection in {} seconds...",
+                    format!("{:.2}", retry_interval_milis as f64 / 1000.0)
+                );
+                }
+            }
+        }
+
+        if retry_counter == MAX_CONNECTION_ATTEMPTS {
+            error!(
+            "Failed to connect after {} retries. Exiting...",
+            retry_counter
+        );
+        } else {
+            info!("Exiting orderly from Lightstreamer client...");
+        }
         Ok(())
     }
 }

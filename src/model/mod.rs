@@ -15,3 +15,5 @@ pub mod responses;
 pub mod retry;
 /// Utility functions for models
 pub mod utils;
+
+pub mod streaming;
