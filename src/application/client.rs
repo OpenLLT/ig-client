@@ -3,9 +3,9 @@
    Email: jb@taunais.com
    Date: 19/10/25
 ******************************************************************************/
-use std::collections::HashSet;
 use crate::application::auth::WebsocketInfo;
 use crate::application::interfaces::account::AccountService;
+use crate::application::interfaces::listener::Listener;
 use crate::application::interfaces::market::MarketService;
 use crate::application::interfaces::order::OrderService;
 use crate::error::AppError;
@@ -21,19 +21,22 @@ use crate::model::responses::{
     DBEntryResponse, HistoricalPricesResponse, MarketNavigationResponse, MarketSearchResponse,
     MultipleMarketDetailsResponse,
 };
-use crate::prelude::{AccountActivityResponse, AccountsResponse, ListenerResult, OrderConfirmationResponse, PositionsResponse, TransactionHistoryResponse, WorkingOrdersResponse};
+use crate::model::streaming::{
+    get_streaming_account_data_fields, get_streaming_market_fields, get_streaming_price_fields,
+    StreamingAccountDataField, StreamingMarketField, StreamingPriceField,
+};
+use crate::prelude::{AccountActivityResponse, AccountFields, AccountsResponse, ListenerResult, OrderConfirmationResponse, PositionsResponse, TradeFields, TransactionHistoryResponse, WorkingOrdersResponse};
 use crate::presentation::market::{MarketData, MarketDetails};
+use crate::presentation::price::PriceData;
 use async_trait::async_trait;
 use lightstreamer_rs::client::{LightstreamerClient, Transport};
-use serde_json::Value;
-use std::sync::Arc;
 use lightstreamer_rs::subscription::{Snapshot, Subscription, SubscriptionMode};
 use lightstreamer_rs::utils::setup_signal_hook;
-use tokio::sync::{Notify, RwLock};
+use serde_json::Value;
+use std::collections::HashSet;
+use std::sync::Arc;
+use tokio::sync::{Mutex, Notify, RwLock};
 use tracing::{debug, error, info, warn};
-use crate::application::interfaces::listener::Listener;
-use crate::model::streaming::{get_streaming_market_fields, StreamingMarketField};
-use crate::presentation::price::PriceData;
 
 const MAX_CONNECTION_ATTEMPTS: u64 = 3;
 
@@ -610,97 +613,554 @@ impl OrderService for Client {
     }
 }
 
+/// Streaming client for IG Markets real-time data.
+///
+/// This client manages two Lightstreamer connections for different data types:
+/// - **Market streamer**: Handles market data (prices, market state), trade updates (CONFIRMS, OPU, WOU),
+///   and account updates (positions, orders, balance). Uses the default adapter.
+/// - **Price streamer**: Handles detailed price data (bid/ask levels, sizes, multiple currencies).
+///   Uses the "Pricing" adapter.
+///
+/// Each connection type can be managed independently and runs in parallel.
 pub struct StreamerClient {
-    http_client: Arc<RwLock<Client>>,
-    streamer_client: Arc<RwLock<LightstreamerClient>>,
+    account_id: String,
+    market_streamer_client: Option<Arc<RwLock<LightstreamerClient>>>,
+    price_streamer_client: Option<Arc<RwLock<LightstreamerClient>>>,
 }
 
 impl StreamerClient {
-    async fn new() -> Result<Self, AppError> {
+    /// Creates a new streaming client instance.
+    ///
+    /// This initializes both streaming clients (market and price) but does not
+    /// establish connections yet. Connections are established when `connect()` is called.
+    ///
+    /// # Returns
+    ///
+    /// Returns a new `StreamerClient` instance or an error if initialization fails.
+    pub async fn new() -> Result<Self, AppError> {
         let http_client_raw = Arc::new(RwLock::new(Client::new()));
         let http_client = http_client_raw.read().await;
         let ws_info = http_client.get_ws_info().await;
         let password = ws_info.get_ws_password();
-        let client = Arc::new(RwLock::new(LightstreamerClient::new(
+
+        // Market data client (no adapter specified - uses default)
+        let market_streamer_client = Arc::new(RwLock::new(LightstreamerClient::new(
             Some(ws_info.server.as_str()),
             None,
             Some(&ws_info.account_id),
             Some(&password),
         )?));
+
+        // Price data client (uses "Pricing" adapter)
+        let price_streamer_client = Arc::new(RwLock::new(LightstreamerClient::new(
+            Some(ws_info.server.as_str()),
+            Some("Pricing"),
+            Some(&ws_info.account_id),
+            Some(&password),
+        )?));
+
+
+
         Ok(Self {
-            http_client: http_client_raw.clone(),
-            streamer_client: client,
+            account_id: ws_info.account_id.clone(),
+            market_streamer_client: Some(market_streamer_client),
+            price_streamer_client: Some(price_streamer_client),
         })
     }
 
-    async fn default() -> Result<Self, AppError> {
+    /// Creates a default streaming client instance.
+    pub async fn default() -> Result<Self, AppError> {
         Self::new().await
     }
-    
-    async fn market_subscribe<F>(&mut self, epics: Vec<String>, fields: HashSet<StreamingMarketField>, callback: F) -> Result<(), AppError>
+
+    /// Subscribes to market data updates for the specified instruments.
+    ///
+    /// This method creates a subscription to receive real-time market data updates
+    /// for the given EPICs. The subscription is non-blocking and returns immediately
+    /// after setup.
+    ///
+    /// # Arguments
+    ///
+    /// * `epics` - List of instrument EPICs to subscribe to
+    /// * `fields` - Set of market data fields to receive (e.g., BID, OFFER, etc.)
+    /// * `callback` - Function to be called when new price data is received
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` if the subscription was successfully created, or an error if
+    /// the subscription setup failed.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use ig_client::prelude::*;
+    /// # async fn example() -> Result<(), AppError> {
+    /// let mut client = StreamerClient::new().await?;
+    /// let epics = vec!["IX.D.DAX.DAILY.IP".to_string()];
+    /// let fields = HashSet::from([StreamingMarketField::Bid, StreamingMarketField::Offer]);
+    ///
+    /// client.market_subscribe(epics, fields, |price_data| {
+    ///     println!("Received price update: {:?}", price_data);
+    ///     ListenerResult::Continue
+    /// }).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn market_subscribe<F>(
+        &mut self,
+        epics: Vec<String>,
+        fields: HashSet<StreamingMarketField>,
+        callback: F,
+    ) -> Result<(), AppError>
     where
         F: Fn(&PriceData) -> ListenerResult + Send + Sync + 'static,
     {
+        // Create listener and subscription
         let listener = Listener::new(callback);
         let fields = get_streaming_market_fields(&fields);
-        let mut subscription = Subscription::new(
-            SubscriptionMode::Merge,
-            Some(epics),
-            Some(fields),
-        )?;
-        
+        let market_epics: Vec<String> = epics.iter().map(|epic| "MARKET:".to_string() + epic).collect();
+        let mut subscription =
+            Subscription::new(SubscriptionMode::Merge, Some(market_epics), Some(fields))?;
+
         subscription.set_data_adapter(None)?;
         subscription.set_requested_snapshot(Some(Snapshot::Yes))?;
         subscription.add_listener(Box::new(listener));
 
+        // Configure client and add subscription
+        let client = self.market_streamer_client.as_ref().ok_or_else(|| {
+            AppError::WebSocketError("market streamer client not initialized".to_string())
+        })?;
+
         {
-            let mut client = self.streamer_client.write().await;
-            LightstreamerClient::subscribe(client.subscription_sender.clone(), subscription).await;
+            let mut client = client.write().await;
             client
                 .connection_options
                 .set_forced_transport(Some(Transport::WsStreaming));
+            LightstreamerClient::subscribe(client.subscription_sender.clone(), subscription).await;
         }
-        info!("Subscription added ");
 
-        // Create a new Notify instance to send a shutdown signal to the signal handler thread.
-        let shutdown_signal = Arc::new(Notify::new());
-        // Spawn a new thread to handle SIGINT and SIGTERM process signals.
-        setup_signal_hook(Arc::clone(&shutdown_signal)).await;
-        
-        //
-        // Infinite loop that will indefinitely retry failed connections unless
-        // a SIGTERM or SIGINT signal is received.
-        //
-        let mut retry_interval_milis: u64 = 0;
-        let mut retry_counter: u64 = 0;
-        while retry_counter < MAX_CONNECTION_ATTEMPTS {
-            let mut client = self.streamer_client.write().await;
-            match client.connect_direct(Arc::clone(&shutdown_signal)).await {
-                Ok(_) => {
-                    client.disconnect().await;
-                    break;
+        info!(
+            "Market subscription created for {} instruments",
+            epics.len()
+        );
+        Ok(())
+    }
+
+    /// Subscribes to trade updates for the account.
+    ///
+    /// This method creates a subscription to receive real-time trade confirmations,
+    /// order updates (OPU), and working order updates (WOU) for the account.
+    /// The subscription is non-blocking and returns immediately after setup.
+    ///
+    /// # Arguments
+    ///
+    /// * `callback` - Function to be called when trade updates are received
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` if the subscription was successfully created, or an error if
+    /// the subscription setup failed.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use ig_client::prelude::*;
+    /// # async fn example() -> Result<(), AppError> {
+    /// let mut client = StreamerClient::new().await?;
+    ///
+    /// client.trade_subscribe(|trade_data| {
+    ///     println!("Trade update: {:?}", trade_data);
+    ///     Ok(())
+    /// }).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn trade_subscribe<F>(
+        &mut self,
+        callback: F,
+    ) -> Result<(), AppError>
+    where
+        F: Fn(&TradeFields) -> ListenerResult + Send + Sync + 'static,
+    {
+        // Create listener and subscription
+        let listener = Listener::new(callback);
+        let account_id = self.account_id.clone();
+        let fields = Some(vec![
+            "CONFIRMS".to_string(),
+            "OPU".to_string(),
+            "WOU".to_string(),
+        ]);
+        let trade_items = vec![format!("TRADE:{account_id}")];
+
+        let mut subscription =
+            Subscription::new(SubscriptionMode::Distinct, Some(trade_items), fields)?;
+
+        subscription.set_data_adapter(None)?;
+        subscription.set_requested_snapshot(Some(Snapshot::Yes))?;
+        subscription.add_listener(Box::new(listener));
+
+        // Configure client and add subscription (reusing market_streamer_client)
+        let client = self.market_streamer_client.as_ref().ok_or_else(|| {
+            AppError::WebSocketError("market streamer client not initialized".to_string())
+        })?;
+
+        {
+            let mut client = client.write().await;
+            client
+                .connection_options
+                .set_forced_transport(Some(Transport::WsStreaming));
+            LightstreamerClient::subscribe(client.subscription_sender.clone(), subscription).await;
+        }
+
+        info!("Trade subscription created for account: {}", account_id);
+        Ok(())
+    }
+
+    /// Subscribes to account data updates.
+    ///
+    /// This method creates a subscription to receive real-time account updates including
+    /// profit/loss, margin, equity, available funds, and other account metrics.
+    /// The subscription is non-blocking and returns immediately after setup.
+    ///
+    /// # Arguments
+    ///
+    /// * `fields` - Set of account data fields to receive (e.g., PNL, MARGIN, EQUITY, etc.)
+    /// * `callback` - Function to be called when account data is received
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` if the subscription was successfully created, or an error if
+    /// the subscription setup failed.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use ig_client::prelude::*;
+    /// # async fn example() -> Result<(), AppError> {
+    /// let mut client = StreamerClient::new().await?;
+    /// let fields = HashSet::from([
+    ///     StreamingAccountDataField::Pnl,
+    ///     StreamingAccountDataField::Margin,
+    ///     StreamingAccountDataField::Equity,
+    ///     StreamingAccountDataField::AvailableToDeal,
+    /// ]);
+    ///
+    /// client.account_subscribe(fields, |account_data| {
+    ///     println!("Account update: {:?}", account_data);
+    ///     Ok(())
+    /// }).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn account_subscribe<F>(
+        &mut self,
+        fields: HashSet<StreamingAccountDataField>,
+        callback: F,
+    ) -> Result<(), AppError>
+    where
+        F: Fn(&AccountFields) -> ListenerResult + Send + Sync + 'static,
+    {
+        // Create listener and subscription
+        let listener = Listener::new(callback);
+        let fields = get_streaming_account_data_fields(&fields);
+        let account_id = self.account_id.clone();
+        let account_items = vec![format!("ACCOUNT:{account_id}")];
+
+        let mut subscription =
+            Subscription::new(SubscriptionMode::Merge, Some(account_items), Some(fields))?;
+
+        subscription.set_data_adapter(None)?;
+        subscription.set_requested_snapshot(Some(Snapshot::Yes))?;
+        subscription.add_listener(Box::new(listener));
+
+        // Configure client and add subscription (reusing market_streamer_client)
+        let client = self.market_streamer_client.as_ref().ok_or_else(|| {
+            AppError::WebSocketError("market streamer client not initialized".to_string())
+        })?;
+
+        {
+            let mut client = client.write().await;
+            client
+                .connection_options
+                .set_forced_transport(Some(Transport::WsStreaming));
+            LightstreamerClient::subscribe(client.subscription_sender.clone(), subscription).await;
+        }
+
+        info!("Account subscription created for account: {}", account_id);
+        Ok(())
+    }
+
+    /// Subscribes to price data updates for the specified instruments.
+    ///
+    /// This method creates a subscription to receive real-time price updates including
+    /// bid/ask prices, sizes, and multiple currency levels for the given EPICs.
+    /// The subscription is non-blocking and returns immediately after setup.
+    ///
+    /// # Arguments
+    ///
+    /// * `epics` - List of instrument EPICs to subscribe to
+    /// * `fields` - Set of price data fields to receive (e.g., BID_PRICE1, ASK_PRICE1, etc.)
+    /// * `callback` - Function to be called when new price data is received
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` if the subscription was successfully created, or an error if
+    /// the subscription setup failed.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use ig_client::prelude::*;
+    /// # async fn example() -> Result<(), AppError> {
+    /// let mut client = StreamerClient::new().await?;
+    /// let epics = vec!["IX.D.DAX.DAILY.IP".to_string()];
+    /// let fields = HashSet::from([
+    ///     StreamingPriceField::BidPrice1,
+    ///     StreamingPriceField::AskPrice1,
+    ///     StreamingPriceField::BidSize1,
+    ///     StreamingPriceField::AskSize1,
+    /// ]);
+    ///
+    /// client.price_subscribe(epics, fields, |price_data| {
+    ///     println!("Received price update: {:?}", price_data);
+    ///     Ok(())
+    /// }).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn price_subscribe<F>(
+        &mut self,
+        epics: Vec<String>,
+        fields: HashSet<StreamingPriceField>,
+        callback: F,
+    ) -> Result<(), AppError>
+    where
+        F: Fn(&PriceData) -> ListenerResult + Send + Sync + 'static,
+    {
+        // Create listener and subscription
+        let listener = Listener::new(callback);
+        let fields = get_streaming_price_fields(&fields);
+        let account_id = self.account_id.clone();
+        let price_epics: Vec<String> = epics
+            .iter()
+            .map(|epic| format!("PRICE:{account_id}:{epic}"))
+            .collect();
+
+        let mut subscription =
+            Subscription::new(SubscriptionMode::Merge, Some(price_epics), Some(fields))?;
+
+        subscription.set_data_adapter(Some("Pricing".to_string()))?;
+        subscription.set_requested_snapshot(Some(Snapshot::Yes))?;
+        subscription.add_listener(Box::new(listener));
+
+        // Configure client and add subscription
+        let client = self.price_streamer_client.as_ref().ok_or_else(|| {
+            AppError::WebSocketError("price streamer client not initialized".to_string())
+        })?;
+
+        {
+            let mut client = client.write().await;
+            client
+                .connection_options
+                .set_forced_transport(Some(Transport::WsStreaming));
+            LightstreamerClient::subscribe(client.subscription_sender.clone(), subscription).await;
+        }
+
+        info!(
+            "Price subscription created for {} instruments (account: {})",
+            epics.len(),
+            account_id
+        );
+        Ok(())
+    }
+
+    /// Connects all active Lightstreamer clients and maintains the connections.
+    ///
+    /// This method establishes connections for all streaming clients that have active
+    /// subscriptions (market and price). Each client runs in its own task and
+    /// all connections are maintained until a shutdown signal is received.
+    ///
+    /// # Arguments
+    ///
+    /// * `shutdown_signal` - Optional signal to gracefully shutdown all connections.
+    ///   If None, a default signal handler for SIGINT/SIGTERM will be created.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` when all connections are closed gracefully, or an error if
+    /// any connection fails after maximum retry attempts.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use ig_client::prelude::*;
+    /// # use tokio::sync::Notify;
+    /// # use std::sync::Arc;
+    /// # async fn example() -> Result<(), AppError> {
+    /// let mut client = StreamerClient::new().await?;
+    ///
+    /// // Setup subscriptions first
+    /// client.market_subscribe(...).await?;
+    /// client.price_subscribe(...).await?;
+    ///
+    /// // Connect and maintain all connections
+    /// client.connect(None).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn connect(&mut self, shutdown_signal: Option<Arc<Notify>>) -> Result<(), AppError> {
+        // Use provided signal or create a new one with signal hooks
+        let signal = if let Some(sig) = shutdown_signal {
+            sig
+        } else {
+            let sig = Arc::new(Notify::new());
+            setup_signal_hook(Arc::clone(&sig)).await;
+            sig
+        };
+
+        let mut tasks = Vec::new();
+
+        // Connect market streamer if available
+        if let Some(client) = self.market_streamer_client.as_ref() {
+            let client = Arc::clone(client);
+            let signal = Arc::clone(&signal);
+            let task = tokio::spawn(async move {
+                Self::connect_client(client, signal, "Market").await
+            });
+            tasks.push(task);
+        }
+
+        // Connect price streamer if available
+        if let Some(client) = self.price_streamer_client.as_ref() {
+            let client = Arc::clone(client);
+            let signal = Arc::clone(&signal);
+            let task = tokio::spawn(async move {
+                Self::connect_client(client, signal, "Price").await
+            });
+            tasks.push(task);
+        }
+
+        if tasks.is_empty() {
+            warn!("No streaming clients available to connect");
+            return Ok(());
+        }
+
+        info!("Connecting {} streaming client(s)...", tasks.len());
+
+        // Wait for all tasks to complete
+        let results = futures::future::join_all(tasks).await;
+
+        // Check if any task failed
+        let mut has_error = false;
+        for (idx, result) in results.iter().enumerate() {
+            match result {
+                Ok(Ok(_)) => {
+                    debug!("Streaming client {} completed successfully", idx);
+                }
+                Ok(Err(e)) => {
+                    error!("Streaming client {} failed: {:?}", idx, e);
+                    has_error = true;
                 }
                 Err(e) => {
-                    error!("Failed to connect: {:?}", e);
-                    tokio::time::sleep(std::time::Duration::from_millis(retry_interval_milis)).await;
-                    retry_interval_milis = (retry_interval_milis + (200 * retry_counter)).min(5000);
-                    retry_counter += 1;
-                    warn!(
-                    "Retrying connection in {} seconds...",
-                    format!("{:.2}", retry_interval_milis as f64 / 1000.0)
-                );
+                    error!("Streaming client {} task panicked: {:?}", idx, e);
+                    has_error = true;
                 }
             }
         }
 
-        if retry_counter == MAX_CONNECTION_ATTEMPTS {
-            error!(
-            "Failed to connect after {} retries. Exiting...",
-            retry_counter
-        );
-        } else {
-            info!("Exiting orderly from Lightstreamer client...");
+        if has_error {
+            return Err(AppError::WebSocketError(
+                "one or more streaming connections failed".to_string(),
+            ));
         }
+
+        info!("All streaming connections closed gracefully");
+        Ok(())
+    }
+
+    /// Internal helper to connect a single Lightstreamer client with retry logic.
+    async fn connect_client(
+        client: Arc<RwLock<LightstreamerClient>>,
+        signal: Arc<Notify>,
+        client_type: &str,
+    ) -> Result<(), AppError> {
+        let mut retry_interval_millis: u64 = 0;
+        let mut retry_counter: u64 = 0;
+
+        while retry_counter < MAX_CONNECTION_ATTEMPTS {
+            let connect_result = {
+                let mut client = client.write().await;
+                client.connect_direct(Arc::clone(&signal)).await
+            };
+
+            match connect_result {
+                Ok(_) => {
+                    info!("{} streamer connected successfully", client_type);
+                    break;
+                }
+                Err(e) => {
+                    error!("{} streamer connection failed: {:?}", client_type, e);
+
+                    if retry_counter < MAX_CONNECTION_ATTEMPTS - 1 {
+                        tokio::time::sleep(std::time::Duration::from_millis(retry_interval_millis))
+                            .await;
+                        retry_interval_millis =
+                            (retry_interval_millis + (200 * retry_counter)).min(5000);
+                        retry_counter += 1;
+                        warn!(
+                            "{} streamer retrying (attempt {}/{}) in {:.2} seconds...",
+                            client_type,
+                            retry_counter + 1,
+                            MAX_CONNECTION_ATTEMPTS,
+                            retry_interval_millis as f64 / 1000.0
+                        );
+                    } else {
+                        retry_counter += 1;
+                    }
+                }
+            }
+        }
+
+        if retry_counter >= MAX_CONNECTION_ATTEMPTS {
+            error!(
+                "{} streamer failed after {} attempts",
+                client_type, MAX_CONNECTION_ATTEMPTS
+            );
+            return Err(AppError::WebSocketError(format!(
+                "{} streamer: maximum connection attempts ({}) exceeded",
+                client_type, MAX_CONNECTION_ATTEMPTS
+            )));
+        }
+
+        info!("{} streamer connection closed gracefully", client_type);
+        Ok(())
+    }
+
+    /// Disconnects all active Lightstreamer clients.
+    ///
+    /// This method gracefully closes all streaming connections (market and price).
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` if all disconnections were successful.
+    pub async fn disconnect(&mut self) -> Result<(), AppError> {
+        let mut disconnected = 0;
+
+        if let Some(client) = self.market_streamer_client.as_ref() {
+            let mut client = client.write().await;
+            client.disconnect().await;
+            info!("Market streamer disconnected");
+            disconnected += 1;
+        }
+
+        if let Some(client) = self.price_streamer_client.as_ref() {
+            let mut client = client.write().await;
+            client.disconnect().await;
+            info!("Price streamer disconnected");
+            disconnected += 1;
+        }
+
+        info!("Disconnected {} streaming client(s)", disconnected);
         Ok(())
     }
 }

@@ -44,6 +44,7 @@ nanoid = { workspace = true}
 pretty-simple-display = { workspace = true}
 governor = { workspace = true}
 prettytable-rs = { workspace = true}
+futures = { workspace = true}
 
 [dev-dependencies]
 
@@ -98,3 +99,4 @@ nanoid = "0.4"
 pretty-simple-display = "0.1"
 governor = "0.10"
 prettytable-rs = "0.10"
+futures = "0.3"
