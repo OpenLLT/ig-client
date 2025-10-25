@@ -13,7 +13,7 @@ pub mod requests;
 pub mod responses;
 /// Retry configuration for HTTP requests
 pub mod retry;
+/// Streaming data field definitions for real-time subscriptions
+pub mod streaming;
 /// Utility functions for models
 pub mod utils;
-
-pub mod streaming;

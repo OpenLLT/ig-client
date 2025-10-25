@@ -39,7 +39,7 @@ use lightstreamer_rs::utils::setup_signal_hook;
 use serde_json::Value;
 use std::collections::HashSet;
 use std::sync::Arc;
-use tokio::sync::{Notify, RwLock};
+use tokio::sync::{Mutex, Notify, RwLock};
 use tracing::{debug, error, info, warn};
 
 const MAX_CONNECTION_ATTEMPTS: u64 = 3;
@@ -628,8 +628,8 @@ impl OrderService for Client {
 /// Each connection type can be managed independently and runs in parallel.
 pub struct StreamerClient {
     account_id: String,
-    market_streamer_client: Option<Arc<RwLock<LightstreamerClient>>>,
-    price_streamer_client: Option<Arc<RwLock<LightstreamerClient>>>,
+    market_streamer_client: Option<Arc<Mutex<LightstreamerClient>>>,
+    price_streamer_client: Option<Arc<Mutex<LightstreamerClient>>>,
 }
 
 impl StreamerClient {
@@ -648,7 +648,7 @@ impl StreamerClient {
         let password = ws_info.get_ws_password();
 
         // Market data client (no adapter specified - uses default)
-        let market_streamer_client = Arc::new(RwLock::new(LightstreamerClient::new(
+        let market_streamer_client = Arc::new(Mutex::new(LightstreamerClient::new(
             Some(ws_info.server.as_str()),
             None,
             Some(&ws_info.account_id),
@@ -656,7 +656,7 @@ impl StreamerClient {
         )?));
 
         // Price data client (uses "Pricing" adapter)
-        let price_streamer_client = Arc::new(RwLock::new(LightstreamerClient::new(
+        let price_streamer_client = Arc::new(Mutex::new(LightstreamerClient::new(
             Some(ws_info.server.as_str()),
             Some("Pricing"),
             Some(&ws_info.account_id),
@@ -721,7 +721,7 @@ impl StreamerClient {
         })?;
 
         {
-            let mut client = client.write().await;
+            let mut client = client.lock().await;
             client
                 .connection_options
                 .set_forced_transport(Some(Transport::WsStreaming));
@@ -750,20 +750,6 @@ impl StreamerClient {
     /// Returns `Ok(())` if the subscription was successfully created, or an error if
     /// the subscription setup failed.
     ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # use ig_client::prelude::*;
-    /// # async fn example() -> Result<(), AppError> {
-    /// let mut client = StreamerClient::new().await?;
-    ///
-    /// client.trade_subscribe(|trade_data| {
-    ///     println!("Trade update: {:?}", trade_data);
-    ///     Ok(())
-    /// }).await?;
-    /// # Ok(())
-    /// # }
-    /// ```
     pub async fn trade_subscribe<F>(&mut self, callback: F) -> Result<(), AppError>
     where
         F: Fn(&TradeFields) -> ListenerResult + Send + Sync + 'static,
@@ -793,7 +779,7 @@ impl StreamerClient {
         })?;
 
         {
-            let mut client = client.write().await;
+            let mut client = client.lock().await;
             client
                 .connection_options
                 .set_forced_transport(Some(Transport::WsStreaming));
@@ -820,26 +806,6 @@ impl StreamerClient {
     /// Returns `Ok(())` if the subscription was successfully created, or an error if
     /// the subscription setup failed.
     ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # use ig_client::prelude::*;
-    /// # async fn example() -> Result<(), AppError> {
-    /// let mut client = StreamerClient::new().await?;
-    /// let fields = HashSet::from([
-    ///     StreamingAccountDataField::Pnl,
-    ///     StreamingAccountDataField::Margin,
-    ///     StreamingAccountDataField::Equity,
-    ///     StreamingAccountDataField::AvailableToDeal,
-    /// ]);
-    ///
-    /// client.account_subscribe(fields, |account_data| {
-    ///     println!("Account update: {:?}", account_data);
-    ///     Ok(())
-    /// }).await?;
-    /// # Ok(())
-    /// # }
-    /// ```
     pub async fn account_subscribe<F>(
         &mut self,
         fields: HashSet<StreamingAccountDataField>,
@@ -870,7 +836,7 @@ impl StreamerClient {
         })?;
 
         {
-            let mut client = client.write().await;
+            let mut client = client.lock().await;
             client
                 .connection_options
                 .set_forced_transport(Some(Transport::WsStreaming));
@@ -898,27 +864,6 @@ impl StreamerClient {
     /// Returns `Ok(())` if the subscription was successfully created, or an error if
     /// the subscription setup failed.
     ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # use ig_client::prelude::*;
-    /// # async fn example() -> Result<(), AppError> {
-    /// let mut client = StreamerClient::new().await?;
-    /// let epics = vec!["IX.D.DAX.DAILY.IP".to_string()];
-    /// let fields = HashSet::from([
-    ///     StreamingPriceField::BidPrice1,
-    ///     StreamingPriceField::AskPrice1,
-    ///     StreamingPriceField::BidSize1,
-    ///     StreamingPriceField::AskSize1,
-    /// ]);
-    ///
-    /// client.price_subscribe(epics, fields, |price_data| {
-    ///     println!("Received price update: {:?}", price_data);
-    ///     Ok(())
-    /// }).await?;
-    /// # Ok(())
-    /// # }
-    /// ```
     pub async fn price_subscribe<F>(
         &mut self,
         epics: Vec<String>,
@@ -950,7 +895,7 @@ impl StreamerClient {
         })?;
 
         {
-            let mut client = client.write().await;
+            let mut client = client.lock().await;
             client
                 .connection_options
                 .set_forced_transport(Some(Transport::WsStreaming));
@@ -981,24 +926,6 @@ impl StreamerClient {
     /// Returns `Ok(())` when all connections are closed gracefully, or an error if
     /// any connection fails after maximum retry attempts.
     ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # use ig_client::prelude::*;
-    /// # use tokio::sync::Notify;
-    /// # use std::sync::Arc;
-    /// # async fn example() -> Result<(), AppError> {
-    /// let mut client = StreamerClient::new().await?;
-    ///
-    /// // Setup subscriptions first
-    /// client.market_subscribe(...).await?;
-    /// client.price_subscribe(...).await?;
-    ///
-    /// // Connect and maintain all connections
-    /// client.connect(None).await?;
-    /// # Ok(())
-    /// # }
-    /// ```
     pub async fn connect(&mut self, shutdown_signal: Option<Arc<Notify>>) -> Result<(), AppError> {
         // Use provided signal or create a new one with signal hooks
         let signal = if let Some(sig) = shutdown_signal {
@@ -1015,9 +942,8 @@ impl StreamerClient {
         if let Some(client) = self.market_streamer_client.as_ref() {
             let client = Arc::clone(client);
             let signal = Arc::clone(&signal);
-            let task = tokio::task::spawn_local(async move {
-                Self::connect_client(client, signal, "Market").await
-            });
+            let task =
+                tokio::spawn(async move { Self::connect_client(client, signal, "Market").await });
             tasks.push(task);
         }
 
@@ -1025,9 +951,8 @@ impl StreamerClient {
         if let Some(client) = self.price_streamer_client.as_ref() {
             let client = Arc::clone(client);
             let signal = Arc::clone(&signal);
-            let task = tokio::task::spawn_local(async move {
-                Self::connect_client(client, signal, "Price").await
-            });
+            let task =
+                tokio::spawn(async move { Self::connect_client(client, signal, "Price").await });
             tasks.push(task);
         }
 
@@ -1071,7 +996,7 @@ impl StreamerClient {
 
     /// Internal helper to connect a single Lightstreamer client with retry logic.
     async fn connect_client(
-        client: Arc<RwLock<LightstreamerClient>>,
+        client: Arc<Mutex<LightstreamerClient>>,
         signal: Arc<Notify>,
         client_type: &str,
     ) -> Result<(), AppError> {
@@ -1080,7 +1005,7 @@ impl StreamerClient {
 
         while retry_counter < MAX_CONNECTION_ATTEMPTS {
             let connect_result = {
-                let mut client = client.write().await;
+                let mut client = client.lock().await;
                 client.connect_direct(Arc::clone(&signal)).await
             };
 
@@ -1138,14 +1063,14 @@ impl StreamerClient {
         let mut disconnected = 0;
 
         if let Some(client) = self.market_streamer_client.as_ref() {
-            let mut client = client.write().await;
+            let mut client = client.lock().await;
             client.disconnect().await;
             info!("Market streamer disconnected");
             disconnected += 1;
         }
 
         if let Some(client) = self.price_streamer_client.as_ref() {
-            let mut client = client.write().await;
+            let mut client = client.lock().await;
             client.disconnect().await;
             info!("Price streamer disconnected");
             disconnected += 1;

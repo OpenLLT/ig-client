@@ -10,6 +10,7 @@ use std::collections::HashMap;
 /// Contains information about trades, positions and working orders
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default)]
 pub struct TradeData {
+    /// Name of the subscribed item
     pub item_name: String,
     /// Position of the item in the subscription
     pub item_pos: i32,

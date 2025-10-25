@@ -161,6 +161,8 @@ pub enum AppError {
     ///     that were violated.
     ///
     InvalidInput(String),
+    /// Generic error for cases that don't fit into other specific error categories.
+    /// Contains a descriptive error message.
     Generic(String),
 }
 

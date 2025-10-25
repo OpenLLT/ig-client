@@ -3,22 +3,45 @@
    Email: jb@taunais.com
    Date: 25/10/25
 ******************************************************************************/
+
+//! Streaming data field definitions for IG Markets API.
+//!
+//! This module provides enums and helper functions for working with streaming
+//! subscriptions in the IG Markets API. It includes field definitions for:
+//! - Market data (prices, market state)
+//! - Price data (detailed bid/ask levels)
+//! - Account data (P&L, margin, equity)
+
 use crate::prelude::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fmt::{Debug, Display};
 
+/// Streaming market fields available for market subscriptions.
+///
+/// These fields represent the various market data points that can be subscribed to
+/// in the IG Markets streaming API for market updates.
 #[derive(Clone, Deserialize, Serialize, PartialEq, Eq, Default, Hash)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum StreamingMarketField {
+    /// Mid open price
     MidOpen,
+    /// High price
     High,
+    /// Low price
     Low,
+    /// Price change
     Change,
+    /// Percentage change
     ChangePct,
+    /// Last update time
     UpdateTime,
+    /// Market delay in milliseconds
     MarketDelay,
+    /// Market state (e.g., TRADEABLE, CLOSED)
     MarketState,
+    /// Bid price
     Bid,
+    /// Offer/Ask price
     #[default]
     Offer,
 }
