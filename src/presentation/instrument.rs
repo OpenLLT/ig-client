@@ -1,6 +1,7 @@
+use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Copy, Clone, Deserialize, Serialize, PartialEq, Eq, Hash, Default)]
+#[derive(DebugPretty, DisplaySimple, Copy, Clone, Deserialize, Serialize, PartialEq, Eq, Hash, Default)]
 #[serde(rename_all = "UPPERCASE")]
 /// Types of financial instruments available in the IG Markets API
 pub enum InstrumentType {

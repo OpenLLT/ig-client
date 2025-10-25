@@ -5,10 +5,11 @@ use serde::{Deserialize, Serialize};
 use serde_json;
 use std::collections::HashMap;
 use std::fmt;
+use pretty_simple_display::{DebugPretty, DisplaySimple};
 
 /// Main structure for trade data received from the IG Markets API
 /// Contains information about trades, positions and working orders
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default)]
 pub struct TradeData {
     /// Name of the item (usually the trade ID)
     pub item_name: String,
@@ -23,7 +24,7 @@ pub struct TradeData {
 }
 
 /// Main fields for a trade update, containing core trade data.
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default)]
 pub struct TradeFields {
     /// Optional confirmation details for the trade.
     #[serde(rename = "CONFIRMS")]
@@ -41,7 +42,7 @@ pub struct TradeFields {
 }
 
 /// Structure representing details of an open position update.
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default)]
 pub struct OpenPositionUpdate {
     /// Unique deal reference for the open position.
     #[serde(rename = "dealReference")]
@@ -98,7 +99,7 @@ pub struct OpenPositionUpdate {
 }
 
 /// Structure representing details of a working order update.
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default)]
 pub struct WorkingOrderUpdate {
     /// Unique deal reference for the working order.
     #[serde(rename = "dealReference")]
@@ -262,13 +263,6 @@ impl TradeData {
         };
 
         Ok(TradeFields { confirms, opu, wou })
-    }
-}
-
-impl fmt::Display for TradeData {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let json = serde_json::to_string(self).map_err(|_| fmt::Error)?;
-        write!(f, "{json}")
     }
 }
 

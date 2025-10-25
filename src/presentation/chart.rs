@@ -3,6 +3,7 @@ use lightstreamer_rs::subscription::ItemUpdate;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt;
+use pretty_simple_display::{DebugPretty, DisplaySimple};
 
 /// Time scale for chart data aggregation
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
@@ -25,7 +26,7 @@ pub enum ChartScale {
     Tick,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default)]
 /// Chart data structure that represents price chart information
 /// Contains both tick and candle data depending on the chart scale
 pub struct ChartData {
@@ -39,7 +40,7 @@ pub struct ChartData {
 }
 
 /// Chart field data containing price, volume, and timestamp information
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default)]
 pub struct ChartFields {
     // Common fields for both chart types
     #[serde(rename = "LTV")]
@@ -301,13 +302,6 @@ impl ChartData {
     /// Gets the time scale of the data
     pub fn get_scale(&self) -> &ChartScale {
         &self.scale
-    }
-}
-
-impl fmt::Display for ChartData {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let json = serde_json::to_string(self).map_err(|_| fmt::Error)?;
-        write!(f, "{json}")
     }
 }
 

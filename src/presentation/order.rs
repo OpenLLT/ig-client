@@ -39,19 +39,17 @@ pub enum OrderType {
 /// This enum covers various states an order can be in throughout its lifecycle,
 /// from creation to completion or cancellation.
 #[derive(Debug, Clone, DisplaySimple, Serialize, Deserialize, PartialEq, Default)]
-#[serde(rename_all = "UPPERCASE")]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Status {
     /// Order has been amended or modified after initial creation
     Amended,
     /// Order has been deleted from the system
     Deleted,
     /// Order has been completely closed with all positions resolved
-    #[serde(rename = "FULLY_CLOSED")]
     FullyClosed,
     /// Order has been opened and is active in the market
     Opened,
     /// Order has been partially closed with some positions still open
-    #[serde(rename = "PARTIALLY_CLOSED")]
     PartiallyClosed,
     /// Order has been closed but may differ from FullyClosed in context
     Closed,
@@ -76,18 +74,15 @@ pub enum Status {
 
 /// Order duration (time in force)
 #[derive(Debug, Clone, DisplaySimple, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum TimeInForce {
     /// Order remains valid until cancelled by the client
-    #[serde(rename = "GOOD_TILL_CANCELLED")]
     #[default]
     GoodTillCancelled,
     /// Order remains valid until a specified date
-    #[serde(rename = "GOOD_TILL_DATE")]
     GoodTillDate,
     /// Order is executed immediately (partially or completely) or cancelled
-    #[serde(rename = "IMMEDIATE_OR_CANCEL")]
     ImmediateOrCancel,
     /// Order must be filled completely immediately or cancelled
-    #[serde(rename = "FILL_OR_KILL")]
     FillOrKill,
 }

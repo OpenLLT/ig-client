@@ -2,10 +2,11 @@ use crate::presentation::order::Status;
 use regex::Regex;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::fmt;
+use pretty_simple_display::{DebugPretty, DisplaySimple};
 use tracing::warn;
 
 /// Structure to represent the parsed option information from an instrument name
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ParsedOptionInfo {
     /// Name of the underlying asset (e.g., "US Tech 100")
     pub asset_name: String,
@@ -15,20 +16,8 @@ pub struct ParsedOptionInfo {
     pub option_type: Option<String>,
 }
 
-impl fmt::Display for ParsedOptionInfo {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Asset: {}, Strike: {}, Type: {}",
-            self.asset_name,
-            self.strike.as_deref().unwrap_or("N/A"),
-            self.option_type.as_deref().unwrap_or("N/A")
-        )
-    }
-}
-
 /// Structure to represent the parsed market data with additional information
-#[derive(Debug, Serialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct ParsedMarketData {
     /// Unique identifier for the market (EPIC code)
     pub epic: String,

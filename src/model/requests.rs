@@ -6,10 +6,10 @@
 use crate::constants::{DEFAULT_ORDER_BUY_LEVEL, DEFAULT_ORDER_SELL_LEVEL};
 use crate::prelude::{Deserialize, Serialize, WorkingOrder};
 use crate::presentation::order::{Direction, OrderType, TimeInForce};
-use pretty_simple_display::DisplaySimple;
+use pretty_simple_display::{DebugPretty, DisplaySimple};
 
 /// Parameters for getting recent prices (API v3)
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Default, Deserialize, Serialize)]
 pub struct RecentPricesRequest<'a> {
     /// Instrument epic
     pub epic: &'a str,
@@ -74,7 +74,7 @@ impl<'a> RecentPricesRequest<'a> {
 }
 
 /// Model for creating a new order
-#[derive(Debug, Clone, DisplaySimple, Serialize, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct CreateOrderRequest {
     /// Instrument EPIC identifier
     pub epic: String,
@@ -503,7 +503,7 @@ impl CreateOrderRequest {
 }
 
 /// Model for updating an existing position
-#[derive(Debug, Clone, DisplaySimple, Serialize, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct UpdatePositionRequest {
     /// New price level for stop loss
     #[serde(rename = "stopLevel", skip_serializing_if = "Option::is_none")]
@@ -523,7 +523,7 @@ pub struct UpdatePositionRequest {
 }
 
 /// Model for closing an existing position
-#[derive(Debug, Clone, DisplaySimple, Serialize, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct ClosePositionRequest {
     /// Unique identifier for the position to close
     #[serde(rename = "dealId", skip_serializing_if = "Option::is_none")]
@@ -654,7 +654,7 @@ impl ClosePositionRequest {
 }
 
 /// Model for creating a new working order
-#[derive(Debug, Clone, DisplaySimple, Deserialize, Serialize, Default)]
+#[derive(DebugPretty, DisplaySimple, Clone, Deserialize, Serialize, Default)]
 pub struct CreateWorkingOrderRequest {
     /// Instrument EPIC identifier
     pub epic: String,

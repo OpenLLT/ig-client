@@ -3,11 +3,10 @@ use crate::presentation::serialization::{string_as_bool_opt, string_as_float_opt
 use lightstreamer_rs::subscription::ItemUpdate;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fmt;
-use std::fmt::Display;
+use pretty_simple_display::{DebugPretty, DisplaySimple};
 
 /// Model for a market instrument with enhanced deserialization
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Instrument {
     /// Unique identifier for the instrument
     pub epic: String,
@@ -59,7 +58,7 @@ pub struct Instrument {
 }
 
 /// Model for an instrument's currency
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Currency {
     /// Currency code (e.g., "USD", "EUR")
     pub code: String,
@@ -77,7 +76,7 @@ pub struct Currency {
 }
 
 /// Model for market data with enhanced deserialization
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct MarketDetails {
     /// Detailed information about the instrument
     pub instrument: Instrument,
@@ -89,7 +88,7 @@ pub struct MarketDetails {
 }
 
 /// Trading rules for a market with enhanced deserialization
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct DealingRules {
     /// Minimum step distance
     #[serde(rename = "minStepDistance")]
@@ -129,7 +128,7 @@ pub struct DealingRules {
 }
 
 /// Market snapshot with enhanced deserialization
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct MarketSnapshot {
     /// Current status of the market (e.g., "OPEN", "CLOSED")
     #[serde(rename = "marketStatus")]
@@ -181,7 +180,7 @@ pub struct MarketSnapshot {
 }
 
 /// Basic market data
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Deserialize, Serialize)]
 pub struct MarketData {
     /// Unique identifier for the market
     pub epic: String,
@@ -220,15 +219,8 @@ pub struct MarketData {
     pub offer: Option<f64>,
 }
 
-impl Display for MarketData {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let json = serde_json::to_string(self).unwrap_or_else(|_| "Invalid JSON".to_string());
-        write!(f, "{json}")
-    }
-}
-
 /// Historical price data point
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct HistoricalPrice {
     /// Timestamp of the price data point
     #[serde(rename = "snapshotTime")]
@@ -251,7 +243,7 @@ pub struct HistoricalPrice {
 }
 
 /// Price point with bid, ask and last traded prices
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct PricePoint {
     /// Bid price at this point
     pub bid: Option<f64>,
@@ -263,7 +255,7 @@ pub struct PricePoint {
 }
 
 /// Information about API usage allowance for price data
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct PriceAllowance {
     /// Remaining API calls allowed in the current period
     #[serde(rename = "remainingAllowance")]
@@ -277,7 +269,7 @@ pub struct PriceAllowance {
 }
 
 /// Details about instrument expiry
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ExpiryDetails {
     /// The last dealing date and time for the instrument
     #[serde(rename = "lastDealingDate")]
@@ -303,7 +295,7 @@ pub enum StepUnit {
 }
 
 /// A struct to handle the minStepDistance value which can be a complex object
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, PartialEq)]
 pub struct StepDistance {
     /// Unit type for the distance
     pub unit: Option<StepUnit>,
@@ -312,7 +304,7 @@ pub struct StepDistance {
 }
 
 /// Node in the market navigation hierarchy
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Deserialize, Serialize)]
 pub struct MarketNavigationNode {
     /// Unique identifier for the node
     pub id: String,
@@ -321,7 +313,7 @@ pub struct MarketNavigationNode {
 }
 
 /// Structure representing a node in the market hierarchy
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct MarketNode {
     /// Node ID
     pub id: String,
@@ -336,8 +328,8 @@ pub struct MarketNode {
 }
 
 /// Represents the current state of a market
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Default)]
-#[serde(rename_all = "UPPERCASE")]
+#[derive(DebugPretty, DisplaySimple, Serialize, Deserialize, Clone, PartialEq, Default)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum MarketState {
     /// Market is closed for trading
     Closed,
@@ -348,16 +340,22 @@ pub enum MarketState {
     Tradeable,
     /// Market is in edit mode
     Edit,
+    /// Market is in edit mode only (no new positions, only edits allowed)
+    EditsOnly,
     /// Market is in auction phase
     Auction,
     /// Market is in auction phase but editing is not allowed
     AuctionNoEdit,
     /// Market is temporarily suspended
     Suspended,
+    /// Market is in auction phase
+    OnAuction,
+    /// Market is in auction phase but editing is not allowed
+    OnAuctionNoEdits,
 }
 
 /// Representation of market data received from the IG Markets streaming API
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default)]
 pub struct PresentationMarketData {
     /// Name of the item this data belongs to
     pub item_name: String,
@@ -430,6 +428,8 @@ impl PresentationMarketData {
             Some("auction") => Some(MarketState::Auction),
             Some("auction_no_edit") => Some(MarketState::AuctionNoEdit),
             Some("suspended") => Some(MarketState::Suspended),
+            Some("on_auction") => Some(MarketState::OnAuction),
+            Some("on_auction_no_edit") => Some(MarketState::OnAuctionNoEdits),
             Some(unknown) => return Err(format!("Unknown market state: {unknown}")),
             None => None,
         };
@@ -468,13 +468,6 @@ impl PresentationMarketData {
     }
 }
 
-impl fmt::Display for PresentationMarketData {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let json = serde_json::to_string(self).map_err(|_| fmt::Error)?;
-        write!(f, "{json}")
-    }
-}
-
 impl From<&ItemUpdate> for PresentationMarketData {
     fn from(item_update: &ItemUpdate) -> Self {
         Self::from_item_update(item_update).unwrap_or_else(|_| PresentationMarketData {
@@ -488,7 +481,7 @@ impl From<&ItemUpdate> for PresentationMarketData {
 }
 
 /// Fields containing market price and status information
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct MarketFields {
     /// The mid-open price of the market
     #[serde(rename = "MID_OPEN")]

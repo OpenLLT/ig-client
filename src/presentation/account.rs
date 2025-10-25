@@ -3,21 +3,21 @@ use crate::presentation::market::MarketState;
 use crate::presentation::order::{Direction, OrderType, Status, TimeInForce};
 use crate::presentation::serialization::string_as_float_opt;
 use lightstreamer_rs::subscription::ItemUpdate;
-use pretty_simple_display::DisplaySimple;
+use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt;
 use std::ops::Add;
 
 /// Account information
-#[derive(Debug, Clone, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Deserialize, Serialize)]
 pub struct AccountInfo {
     /// List of accounts owned by the user
     pub accounts: Vec<Account>,
 }
 
 /// Details of a specific account
-#[derive(Debug, Clone, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Deserialize, Serialize)]
 pub struct Account {
     /// Unique identifier for the account
     #[serde(rename = "accountId")]
@@ -39,7 +39,7 @@ pub struct Account {
 }
 
 /// Account balance information
-#[derive(Debug, Clone, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Deserialize, Serialize)]
 pub struct AccountBalance {
     /// Total balance of the account
     pub balance: f64,
@@ -53,14 +53,14 @@ pub struct AccountBalance {
 }
 
 /// Metadata for activity pagination
-#[derive(Debug, Clone, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Deserialize, Serialize)]
 pub struct ActivityMetadata {
     /// Paging information
     pub paging: Option<ActivityPaging>,
 }
 
 /// Paging information for activities
-#[derive(Debug, Clone, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Deserialize, Serialize)]
 pub struct ActivityPaging {
     /// Number of items per page
     pub size: Option<i32>,
@@ -70,18 +70,15 @@ pub struct ActivityPaging {
 
 #[derive(Debug, Copy, Clone, DisplaySimple, Deserialize, Serialize)]
 /// Type of account activity
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ActivityType {
     /// Activity related to editing stop and limit orders
-    #[serde(rename = "EDIT_STOP_AND_LIMIT")]
     EditStopAndLimit,
     /// Activity related to positions
-    #[serde(rename = "POSITION")]
     Position,
     /// System-generated activity
-    #[serde(rename = "SYSTEM")]
     System,
     /// Activity related to working orders
-    #[serde(rename = "WORKING_ORDER")]
     WorkingOrder,
 }
 

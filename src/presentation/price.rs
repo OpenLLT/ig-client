@@ -1,6 +1,6 @@
 use crate::presentation::serialization::string_as_float_opt;
 use lightstreamer_rs::subscription::ItemUpdate;
-use pretty_simple_display::DisplaySimple;
+use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -39,7 +39,7 @@ pub enum DealingFlag {
 
 /// Structure for price data received from the IG Markets API
 /// Contains information about market prices and related data
-#[derive(Debug, Clone, DisplaySimple, Serialize, Deserialize, Default)]
+#[derive(DebugPretty, Clone, DisplaySimple, Serialize, Deserialize, Default)]
 pub struct PriceData {
     /// Name of the item (usually the market ID)
     pub item_name: String,
@@ -54,7 +54,7 @@ pub struct PriceData {
 }
 
 /// Price field data containing bid, offer, and market status information
-#[derive(Debug, Clone, DisplaySimple, Serialize, Deserialize, Default)]
+#[derive(DebugPretty, Clone, DisplaySimple, Serialize, Deserialize, Default)]
 pub struct PriceFields {
     #[serde(rename = "MID_OPEN")]
     #[serde(with = "string_as_float_opt")]

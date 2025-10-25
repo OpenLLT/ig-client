@@ -3,10 +3,12 @@
    Email: jb@taunais.com
    Date: 20/10/25
 ******************************************************************************/
+use pretty_simple_display::{DebugPretty, DisplaySimple};
+use crate::prelude::{Deserialize, Serialize};
 use crate::utils::config::get_env_or_none;
 
 /// Configuration for HTTP request retry behavior
-#[derive(Debug, Clone)]
+#[derive(DebugPretty, DisplaySimple, Clone, Deserialize, Serialize)]
 pub struct RetryConfig {
     /// Maximum number of retries on rate limit (None = infinite retries)
     pub max_retry_count: Option<u32>,
