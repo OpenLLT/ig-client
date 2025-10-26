@@ -208,28 +208,6 @@ async fn main() -> Result<(), AppError> {
 
     info!("✅ Trade subscription configured successfully");
     info!("");
-
-    // Optional: You can add additional subscriptions here
-    // For example, to also monitor price changes or account updates:
-
-    // Example of adding price subscription for specific instruments:
-    // use ig_client::model::streaming::StreamingPriceField;
-    // use std::collections::HashSet;
-    // let epics = vec!["IX.D.DAX.DAILY.IP".to_string()];
-    // let price_fields = HashSet::from([StreamingPriceField::BidPrice1, StreamingPriceField::AskPrice1]);
-    // client.price_subscribe(epics, price_fields, |price_data| {
-    //     info!("💰 Price update: {}", price_data);
-    //     Ok(())
-    // }).await?;
-
-    // Example of adding account subscription:
-    // use ig_client::model::streaming::StreamingAccountDataField;
-    // let account_fields = HashSet::from([StreamingAccountDataField::Pnl, StreamingAccountDataField::Equity]);
-    // client.account_subscribe(account_fields, |account_data| {
-    //     info!("💼 Account update: {}", account_data);
-    //     Ok(())
-    // }).await?;
-
     info!("🔌 Connecting to Lightstreamer server...");
     info!("The connection will remain active until you press Ctrl+C");
     info!("Start trading to see real-time updates!");
