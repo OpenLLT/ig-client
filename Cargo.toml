@@ -94,7 +94,7 @@ sqlx = { version = "0.8", features = [ "postgres","macros","chrono","runtime-tok
 async-trait = "0.1"
 regex = "1.12"
 dotenv = "0.15"
-lightstreamer-rs = "0.2"
+lightstreamer-rs = "0.2.1"
 lazy_static = "1.5"
 nanoid = "0.4"
 pretty-simple-display = "0.1"

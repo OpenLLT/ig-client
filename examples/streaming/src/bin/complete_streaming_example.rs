@@ -49,12 +49,15 @@ async fn main() -> Result<(), AppError> {
         StreamingMarketField::MarketState,
     ]);
 
-    client
-        .market_subscribe(epics.clone(), market_fields, |price_data| {
-            info!("Market update: {}", price_data);
-            Ok(())
-        })
+    let mut market_receiver = client
+        .market_subscribe(epics.clone(), market_fields)
         .await?;
+
+    tokio::spawn(async move {
+        while let Some(price_data) = market_receiver.recv().await {
+            info!("Market update: {}", price_data);
+        }
+    });
 
     // 2. Subscribe to detailed price data
     info!("Setting up price data subscription...");
@@ -68,21 +71,27 @@ async fn main() -> Result<(), AppError> {
         StreamingPriceField::Timestamp,
     ]);
 
-    client
-        .price_subscribe(epics.clone(), price_fields, |price_data| {
-            info!("Price update: {}", price_data);
-            Ok(())
-        })
+    let mut price_receiver = client
+        .price_subscribe(epics.clone(), price_fields)
         .await?;
+
+    tokio::spawn(async move {
+        while let Some(price_data) = price_receiver.recv().await {
+            info!("Price update: {}", price_data);
+        }
+    });
 
     // 3. Subscribe to trade updates
     info!("Setting up trade subscription...");
-    client
-        .trade_subscribe(|trade_data| {
-            info!("Trade update: {}", trade_data);
-            Ok(())
-        })
+    let mut trade_receiver = client
+        .trade_subscribe()
         .await?;
+
+    tokio::spawn(async move {
+        while let Some(trade_data) = trade_receiver.recv().await {
+            info!("Trade update: {}", trade_data);
+        }
+    });
 
     // 4. Subscribe to account data
     info!("Setting up account data subscription...");
@@ -94,12 +103,15 @@ async fn main() -> Result<(), AppError> {
         StreamingAccountDataField::AvailableCash,
     ]);
 
-    client
-        .account_subscribe(account_fields, |account_data| {
-            info!("Account update: {}", account_data);
-            Ok(())
-        })
+    let mut account_receiver = client
+        .account_subscribe(account_fields)
         .await?;
+
+    tokio::spawn(async move {
+        while let Some(account_data) = account_receiver.recv().await {
+            info!("Account update: {}", account_data);
+        }
+    });
 
     // Connect and maintain all connections
     // Market, trade, and account subscriptions use market_streamer_client

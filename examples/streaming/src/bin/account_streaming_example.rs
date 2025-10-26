@@ -42,12 +42,16 @@ async fn main() -> Result<(), AppError> {
 
     // Set up the account subscription (non-blocking)
     info!("Setting up account data subscription...");
-    client
-        .account_subscribe(fields, |account_data| {
-            info!("Account update: {}", account_data);
-            Ok(())
-        })
+    let mut receiver = client
+        .account_subscribe(fields)
         .await?;
+
+    // Spawn a task to handle incoming account data updates
+    tokio::spawn(async move {
+        while let Some(account_data) = receiver.recv().await {
+            info!("Account update: {}", account_data);
+        }
+    });
 
     // You can also add other subscriptions
     // client.market_subscribe(...).await?;

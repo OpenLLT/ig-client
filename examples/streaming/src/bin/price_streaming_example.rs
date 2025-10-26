@@ -58,12 +58,16 @@ async fn main() -> Result<(), AppError> {
 
     // Set up the price subscription (non-blocking)
     info!("Setting up price data subscription...");
-    client
-        .price_subscribe(epics.clone(), fields, |price_data| {
-            info!("Price update - {}", price_data);
-            Ok(())
-        })
+    let mut receiver = client
+        .price_subscribe(epics.clone(), fields)
         .await?;
+
+    // Spawn a task to handle incoming price data updates
+    tokio::spawn(async move {
+        while let Some(price_data) = receiver.recv().await {
+            info!("Price update - {}", price_data);
+        }
+    });
 
     // You can add more subscriptions here if needed
     // For example, market data subscriptions:
