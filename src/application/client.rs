@@ -5,7 +5,6 @@
 ******************************************************************************/
 use crate::application::auth::WebsocketInfo;
 use crate::application::interfaces::account::AccountService;
-use crate::application::interfaces::listener::Listener;
 use crate::application::interfaces::market::MarketService;
 use crate::application::interfaces::order::OrderService;
 use crate::error::AppError;
@@ -26,20 +25,19 @@ use crate::model::streaming::{
     get_streaming_account_data_fields, get_streaming_market_fields, get_streaming_price_fields,
 };
 use crate::prelude::{
-    AccountActivityResponse, AccountFields, AccountsResponse, ListenerResult,
-    OrderConfirmationResponse, PositionsResponse, TradeFields, TransactionHistoryResponse,
-    WorkingOrdersResponse,
+    AccountActivityResponse, AccountFields, AccountsResponse, OrderConfirmationResponse,
+    PositionsResponse, TradeFields, TransactionHistoryResponse, WorkingOrdersResponse,
 };
 use crate::presentation::market::{MarketData, MarketDetails};
 use crate::presentation::price::PriceData;
 use async_trait::async_trait;
 use lightstreamer_rs::client::{LightstreamerClient, Transport};
-use lightstreamer_rs::subscription::{Snapshot, Subscription, SubscriptionMode};
+use lightstreamer_rs::subscription::{ChannelSubscriptionListener, Snapshot, Subscription, SubscriptionMode};
 use lightstreamer_rs::utils::setup_signal_hook;
 use serde_json::Value;
 use std::collections::HashSet;
 use std::sync::Arc;
-use tokio::sync::{Mutex, Notify, RwLock};
+use tokio::sync::{mpsc, Mutex, Notify, RwLock};
 use tracing::{debug, error, info, warn};
 
 const MAX_CONNECTION_ATTEMPTS: u64 = 3;
@@ -678,31 +676,37 @@ impl StreamerClient {
     /// Subscribes to market data updates for the specified instruments.
     ///
     /// This method creates a subscription to receive real-time market data updates
-    /// for the given EPICs. The subscription is non-blocking and returns immediately
-    /// after setup.
+    /// for the given EPICs and returns a channel receiver for consuming the updates.
     ///
     /// # Arguments
     ///
     /// * `epics` - List of instrument EPICs to subscribe to
     /// * `fields` - Set of market data fields to receive (e.g., BID, OFFER, etc.)
-    /// * `callback` - Function to be called when new price data is received
     ///
     /// # Returns
     ///
-    /// Returns `Ok(())` if the subscription was successfully created, or an error if
+    /// Returns a receiver channel for `PriceData` updates, or an error if
     /// the subscription setup failed.
     ///
-    pub async fn market_subscribe<F>(
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let mut receiver = client.market_subscribe(
+    ///     vec!["IX.D.DAX.DAILY.IP".to_string()],
+    ///     fields
+    /// ).await?;
+    ///
+    /// tokio::spawn(async move {
+    ///     while let Some(price_data) = receiver.recv().await {
+    ///         println!("Price update: {:?}", price_data);
+    ///     }
+    /// });
+    /// ```
+    pub async fn market_subscribe(
         &mut self,
         epics: Vec<String>,
         fields: HashSet<StreamingMarketField>,
-        callback: F,
-    ) -> Result<(), AppError>
-    where
-        F: Fn(&PriceData) -> ListenerResult + Send + Sync + 'static,
-    {
-        // Create listener and subscription
-        let listener = Listener::new(callback);
+    ) -> Result<mpsc::UnboundedReceiver<PriceData>, AppError> {
         let fields = get_streaming_market_fields(&fields);
         let market_epics: Vec<String> = epics
             .iter()
@@ -713,6 +717,9 @@ impl StreamerClient {
 
         subscription.set_data_adapter(None)?;
         subscription.set_requested_snapshot(Some(Snapshot::Yes))?;
+
+        // Create channel listener that converts ItemUpdate to PriceData
+        let (listener, item_receiver) = ChannelSubscriptionListener::create_channel();
         subscription.add_listener(Box::new(listener));
 
         // Configure client and add subscription
@@ -728,36 +735,48 @@ impl StreamerClient {
             LightstreamerClient::subscribe(client.subscription_sender.clone(), subscription).await;
         }
 
+        // Create a channel for PriceData and spawn a task to convert ItemUpdate to PriceData
+        let (price_tx, price_rx) = mpsc::unbounded_channel();
+        tokio::spawn(async move {
+            let mut receiver = item_receiver;
+            while let Some(item_update) = receiver.recv().await {
+                let price_data = PriceData::from(&item_update);
+                let _ = price_tx.send(price_data);
+            }
+        });
+
         info!(
             "Market subscription created for {} instruments",
             epics.len()
         );
-        Ok(())
+        Ok(price_rx)
     }
 
     /// Subscribes to trade updates for the account.
     ///
     /// This method creates a subscription to receive real-time trade confirmations,
-    /// order updates (OPU), and working order updates (WOU) for the account.
-    /// The subscription is non-blocking and returns immediately after setup.
-    ///
-    /// # Arguments
-    ///
-    /// * `callback` - Function to be called when trade updates are received
+    /// order updates (OPU), and working order updates (WOU) for the account,
+    /// and returns a channel receiver for consuming the updates.
     ///
     /// # Returns
     ///
-    /// Returns `Ok(())` if the subscription was successfully created, or an error if
+    /// Returns a receiver channel for `TradeFields` updates, or an error if
     /// the subscription setup failed.
     ///
-    pub async fn trade_subscribe<F>(&mut self, callback: F) -> Result<(), AppError>
-    where
-        F: Fn(&TradeFields) -> ListenerResult + Send + Sync + 'static,
-    {
-        // Create listener and subscription with TradeData wrapper
-        let trade_callback =
-            move |trade_data: &crate::presentation::trade::TradeData| callback(&trade_data.fields);
-        let listener = Listener::new(trade_callback);
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let mut receiver = client.trade_subscribe().await?;
+    ///
+    /// tokio::spawn(async move {
+    ///     while let Some(trade_fields) = receiver.recv().await {
+    ///         println!("Trade update: {:?}", trade_fields);
+    ///     }
+    /// });
+    /// ```
+    pub async fn trade_subscribe(
+        &mut self,
+    ) -> Result<mpsc::UnboundedReceiver<TradeFields>, AppError> {
         let account_id = self.account_id.clone();
         let fields = Some(vec![
             "CONFIRMS".to_string(),
@@ -771,6 +790,9 @@ impl StreamerClient {
 
         subscription.set_data_adapter(None)?;
         subscription.set_requested_snapshot(Some(Snapshot::Yes))?;
+
+        // Create channel listener
+        let (listener, item_receiver) = ChannelSubscriptionListener::create_channel();
         subscription.add_listener(Box::new(listener));
 
         // Configure client and add subscription (reusing market_streamer_client)
@@ -786,39 +808,50 @@ impl StreamerClient {
             LightstreamerClient::subscribe(client.subscription_sender.clone(), subscription).await;
         }
 
+        // Create a channel for TradeFields and spawn a task to convert ItemUpdate to TradeFields
+        let (trade_tx, trade_rx) = mpsc::unbounded_channel();
+        tokio::spawn(async move {
+            let mut receiver = item_receiver;
+            while let Some(item_update) = receiver.recv().await {
+                let trade_data = crate::presentation::trade::TradeData::from(&item_update);
+                let _ = trade_tx.send(trade_data.fields);
+            }
+        });
+
         info!("Trade subscription created for account: {}", account_id);
-        Ok(())
+        Ok(trade_rx)
     }
 
     /// Subscribes to account data updates.
     ///
     /// This method creates a subscription to receive real-time account updates including
-    /// profit/loss, margin, equity, available funds, and other account metrics.
-    /// The subscription is non-blocking and returns immediately after setup.
+    /// profit/loss, margin, equity, available funds, and other account metrics,
+    /// and returns a channel receiver for consuming the updates.
     ///
     /// # Arguments
     ///
     /// * `fields` - Set of account data fields to receive (e.g., PNL, MARGIN, EQUITY, etc.)
-    /// * `callback` - Function to be called when account data is received
     ///
     /// # Returns
     ///
-    /// Returns `Ok(())` if the subscription was successfully created, or an error if
+    /// Returns a receiver channel for `AccountFields` updates, or an error if
     /// the subscription setup failed.
     ///
-    pub async fn account_subscribe<F>(
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let mut receiver = client.account_subscribe(fields).await?;
+    ///
+    /// tokio::spawn(async move {
+    ///     while let Some(account_fields) = receiver.recv().await {
+    ///         println!("Account update: {:?}", account_fields);
+    ///     }
+    /// });
+    /// ```
+    pub async fn account_subscribe(
         &mut self,
         fields: HashSet<StreamingAccountDataField>,
-        callback: F,
-    ) -> Result<(), AppError>
-    where
-        F: Fn(&AccountFields) -> ListenerResult + Send + Sync + 'static,
-    {
-        // Create listener and subscription with AccountData wrapper
-        let account_callback = move |account_data: &crate::presentation::account::AccountData| {
-            callback(&account_data.fields)
-        };
-        let listener = Listener::new(account_callback);
+    ) -> Result<mpsc::UnboundedReceiver<AccountFields>, AppError> {
         let fields = get_streaming_account_data_fields(&fields);
         let account_id = self.account_id.clone();
         let account_items = vec![format!("ACCOUNT:{account_id}")];
@@ -828,6 +861,9 @@ impl StreamerClient {
 
         subscription.set_data_adapter(None)?;
         subscription.set_requested_snapshot(Some(Snapshot::Yes))?;
+
+        // Create channel listener
+        let (listener, item_receiver) = ChannelSubscriptionListener::create_channel();
         subscription.add_listener(Box::new(listener));
 
         // Configure client and add subscription (reusing market_streamer_client)
@@ -843,38 +879,55 @@ impl StreamerClient {
             LightstreamerClient::subscribe(client.subscription_sender.clone(), subscription).await;
         }
 
+        // Create a channel for AccountFields and spawn a task to convert ItemUpdate to AccountFields
+        let (account_tx, account_rx) = mpsc::unbounded_channel();
+        tokio::spawn(async move {
+            let mut receiver = item_receiver;
+            while let Some(item_update) = receiver.recv().await {
+                let account_data = crate::presentation::account::AccountData::from(&item_update);
+                let _ = account_tx.send(account_data.fields);
+            }
+        });
+
         info!("Account subscription created for account: {}", account_id);
-        Ok(())
+        Ok(account_rx)
     }
 
     /// Subscribes to price data updates for the specified instruments.
     ///
     /// This method creates a subscription to receive real-time price updates including
-    /// bid/ask prices, sizes, and multiple currency levels for the given EPICs.
-    /// The subscription is non-blocking and returns immediately after setup.
+    /// bid/ask prices, sizes, and multiple currency levels for the given EPICs,
+    /// and returns a channel receiver for consuming the updates.
     ///
     /// # Arguments
     ///
     /// * `epics` - List of instrument EPICs to subscribe to
     /// * `fields` - Set of price data fields to receive (e.g., BID_PRICE1, ASK_PRICE1, etc.)
-    /// * `callback` - Function to be called when new price data is received
     ///
     /// # Returns
     ///
-    /// Returns `Ok(())` if the subscription was successfully created, or an error if
+    /// Returns a receiver channel for `PriceData` updates, or an error if
     /// the subscription setup failed.
     ///
-    pub async fn price_subscribe<F>(
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let mut receiver = client.price_subscribe(
+    ///     vec!["IX.D.DAX.DAILY.IP".to_string()],
+    ///     fields
+    /// ).await?;
+    ///
+    /// tokio::spawn(async move {
+    ///     while let Some(price_data) = receiver.recv().await {
+    ///         println!("Price update: {:?}", price_data);
+    ///     }
+    /// });
+    /// ```
+    pub async fn price_subscribe(
         &mut self,
         epics: Vec<String>,
         fields: HashSet<StreamingPriceField>,
-        callback: F,
-    ) -> Result<(), AppError>
-    where
-        F: Fn(&PriceData) -> ListenerResult + Send + Sync + 'static,
-    {
-        // Create listener and subscription
-        let listener = Listener::new(callback);
+    ) -> Result<mpsc::UnboundedReceiver<PriceData>, AppError> {
         let fields = get_streaming_price_fields(&fields);
         let account_id = self.account_id.clone();
         let price_epics: Vec<String> = epics
@@ -887,6 +940,9 @@ impl StreamerClient {
 
         subscription.set_data_adapter(Some("Pricing".to_string()))?;
         subscription.set_requested_snapshot(Some(Snapshot::Yes))?;
+
+        // Create channel listener
+        let (listener, item_receiver) = ChannelSubscriptionListener::create_channel();
         subscription.add_listener(Box::new(listener));
 
         // Configure client and add subscription
@@ -902,12 +958,22 @@ impl StreamerClient {
             LightstreamerClient::subscribe(client.subscription_sender.clone(), subscription).await;
         }
 
+        // Create a channel for PriceData and spawn a task to convert ItemUpdate to PriceData
+        let (price_tx, price_rx) = mpsc::unbounded_channel();
+        tokio::spawn(async move {
+            let mut receiver = item_receiver;
+            while let Some(item_update) = receiver.recv().await {
+                let price_data = PriceData::from(&item_update);
+                let _ = price_tx.send(price_data);
+            }
+        });
+
         info!(
             "Price subscription created for {} instruments (account: {})",
             epics.len(),
             account_id
         );
-        Ok(())
+        Ok(price_rx)
     }
 
     /// Connects all active Lightstreamer clients and maintains the connections.
@@ -1009,13 +1075,16 @@ impl StreamerClient {
                 client.connect_direct(Arc::clone(&signal)).await
             };
 
-            match connect_result {
+            // Convert error to String immediately to avoid Send issues
+            let result_with_string_error = connect_result.map_err(|e| format!("{:?}", e));
+
+            match result_with_string_error {
                 Ok(_) => {
                     info!("{} streamer connected successfully", client_type);
                     break;
                 }
-                Err(e) => {
-                    error!("{} streamer connection failed: {:?}", client_type, e);
+                Err(error_msg) => {
+                    error!("{} streamer connection failed: {}", client_type, error_msg);
 
                     if retry_counter < MAX_CONNECTION_ATTEMPTS - 1 {
                         tokio::time::sleep(std::time::Duration::from_millis(retry_interval_millis))
