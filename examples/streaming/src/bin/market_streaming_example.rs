@@ -30,6 +30,7 @@ async fn main() -> Result<(), AppError> {
     let epics = vec![
         "OP.D.OTCBTCWK.114500C.IP".to_string(),
         "DO.D.OTCDETH.21.IP".to_string(),
+        "OD.D.OTCWK3EUR.37.IP".to_string(),
     ];
 
     // Define which market fields we want to receive
