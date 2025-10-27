@@ -48,8 +48,19 @@ pub enum StreamingMarketField {
 
 impl Debug for StreamingMarketField {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let field_name = serde_json::to_string(self).unwrap();
-        write!(f, "{:?}", field_name)
+        let field_name = match self {
+            StreamingMarketField::MidOpen => "MID_OPEN",
+            StreamingMarketField::High => "HIGH",
+            StreamingMarketField::Low => "LOW",
+            StreamingMarketField::Change => "CHANGE",
+            StreamingMarketField::ChangePct => "CHANGE_PCT",
+            StreamingMarketField::UpdateTime => "UPDATE_TIME",
+            StreamingMarketField::MarketDelay => "MARKET_DELAY",
+            StreamingMarketField::MarketState => "MARKET_STATE",
+            StreamingMarketField::Bid => "BID",
+            StreamingMarketField::Offer => "OFFER",
+        };
+        write!(f, "{}", field_name)
     }
 }
 
@@ -267,8 +278,92 @@ pub enum StreamingPriceField {
 
 impl Debug for StreamingPriceField {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let field_name = serde_json::to_string(self).unwrap();
-        write!(f, "{:?}", field_name)
+        let field_name = match self {
+            StreamingPriceField::MidOpen => "MID_OPEN",
+            StreamingPriceField::High => "HIGH",
+            StreamingPriceField::Low => "LOW",
+            StreamingPriceField::BidQuoteId => "BIDQUOTEID",
+            StreamingPriceField::AskQuoteId => "ASKQUOTEID",
+            StreamingPriceField::BidPrice1 => "BIDPRICE1",
+            StreamingPriceField::BidPrice2 => "BIDPRICE2",
+            StreamingPriceField::BidPrice3 => "BIDPRICE3",
+            StreamingPriceField::BidPrice4 => "BIDPRICE4",
+            StreamingPriceField::BidPrice5 => "BIDPRICE5",
+            StreamingPriceField::AskPrice1 => "ASKPRICE1",
+            StreamingPriceField::AskPrice2 => "ASKPRICE2",
+            StreamingPriceField::AskPrice3 => "ASKPRICE3",
+            StreamingPriceField::AskPrice4 => "ASKPRICE4",
+            StreamingPriceField::AskPrice5 => "ASKPRICE5",
+            StreamingPriceField::BidSize1 => "BIDSIZE1",
+            StreamingPriceField::BidSize2 => "BIDSIZE2",
+            StreamingPriceField::BidSize3 => "BIDSIZE3",
+            StreamingPriceField::BidSize4 => "BIDSIZE4",
+            StreamingPriceField::BidSize5 => "BIDSIZE5",
+            StreamingPriceField::AskSize1 => "ASKSIZE1",
+            StreamingPriceField::AskSize2 => "ASKSIZE2",
+            StreamingPriceField::AskSize3 => "ASKSIZE3",
+            StreamingPriceField::AskSize4 => "ASKSIZE4",
+            StreamingPriceField::AskSize5 => "ASKSIZE5",
+            StreamingPriceField::Currency0 => "CURRENCY0",
+            StreamingPriceField::Currency1 => "CURRENCY1",
+            StreamingPriceField::C1BidSize1 => "C1BIDSIZE1",
+            StreamingPriceField::C1BidSize2 => "C1BIDSIZE2",
+            StreamingPriceField::C1BidSize3 => "C1BIDSIZE3",
+            StreamingPriceField::C1BidSize4 => "C1BIDSIZE4",
+            StreamingPriceField::C1BidSize5 => "C1BIDSIZE5",
+            StreamingPriceField::C1AskSize1 => "C1ASKSIZE1",
+            StreamingPriceField::C1AskSize2 => "C1ASKSIZE2",
+            StreamingPriceField::C1AskSize3 => "C1ASKSIZE3",
+            StreamingPriceField::C1AskSize4 => "C1ASKSIZE4",
+            StreamingPriceField::C1AskSize5 => "C1ASKSIZE5",
+            StreamingPriceField::Currency2 => "CURRENCY2",
+            StreamingPriceField::C2BidSize1 => "C2BIDSIZE1",
+            StreamingPriceField::C2BidSize2 => "C2BIDSIZE2",
+            StreamingPriceField::C2BidSize3 => "C2BIDSIZE3",
+            StreamingPriceField::C2BidSize4 => "C2BIDSIZE4",
+            StreamingPriceField::C2BidSize5 => "C2BIDSIZE5",
+            StreamingPriceField::C2AskSize1 => "C2ASKSIZE1",
+            StreamingPriceField::C2AskSize2 => "C2ASKSIZE2",
+            StreamingPriceField::C2AskSize3 => "C2ASKSIZE3",
+            StreamingPriceField::C2AskSize4 => "C2ASKSIZE4",
+            StreamingPriceField::C2AskSize5 => "C2ASKSIZE5",
+            StreamingPriceField::Currency3 => "CURRENCY3",
+            StreamingPriceField::C3BidSize1 => "C3BIDSIZE1",
+            StreamingPriceField::C3BidSize2 => "C3BIDSIZE2",
+            StreamingPriceField::C3BidSize3 => "C3BIDSIZE3",
+            StreamingPriceField::C3BidSize4 => "C3BIDSIZE4",
+            StreamingPriceField::C3BidSize5 => "C3BIDSIZE5",
+            StreamingPriceField::C3AskSize1 => "C3ASKSIZE1",
+            StreamingPriceField::C3AskSize2 => "C3ASKSIZE2",
+            StreamingPriceField::C3AskSize3 => "C3ASKSIZE3",
+            StreamingPriceField::C3AskSize4 => "C3ASKSIZE4",
+            StreamingPriceField::C3AskSize5 => "C3ASKSIZE5",
+            StreamingPriceField::Currency4 => "CURRENCY4",
+            StreamingPriceField::C4BidSize1 => "C4BIDSIZE1",
+            StreamingPriceField::C4BidSize2 => "C4BIDSIZE2",
+            StreamingPriceField::C4BidSize3 => "C4BIDSIZE3",
+            StreamingPriceField::C4BidSize4 => "C4BIDSIZE4",
+            StreamingPriceField::C4BidSize5 => "C4BIDSIZE5",
+            StreamingPriceField::C4AskSize1 => "C4ASKSIZE1",
+            StreamingPriceField::C4AskSize2 => "C4ASKSIZE2",
+            StreamingPriceField::C4AskSize3 => "C4ASKSIZE3",
+            StreamingPriceField::C4AskSize4 => "C4ASKSIZE4",
+            StreamingPriceField::C4AskSize5 => "C4ASKSIZE5",
+            StreamingPriceField::Currency5 => "CURRENCY5",
+            StreamingPriceField::C5BidSize1 => "C5BIDSIZE1",
+            StreamingPriceField::C5BidSize2 => "C5BIDSIZE2",
+            StreamingPriceField::C5BidSize3 => "C5BIDSIZE3",
+            StreamingPriceField::C5BidSize4 => "C5BIDSIZE4",
+            StreamingPriceField::C5BidSize5 => "C5BIDSIZE5",
+            StreamingPriceField::C5AskSize1 => "C5ASKSIZE1",
+            StreamingPriceField::C5AskSize2 => "C5ASKSIZE2",
+            StreamingPriceField::C5AskSize3 => "C5ASKSIZE3",
+            StreamingPriceField::C5AskSize4 => "C5ASKSIZE4",
+            StreamingPriceField::C5AskSize5 => "C5ASKSIZE5",
+            StreamingPriceField::Timestamp => "TIMESTAMP",
+            StreamingPriceField::DlgFlag => "DLG_FLAG",
+        };
+        write!(f, "{}", field_name)
     }
 }
 
@@ -453,8 +548,21 @@ pub enum StreamingAccountDataField {
 
 impl Debug for StreamingAccountDataField {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let field_name = serde_json::to_string(self).unwrap();
-        write!(f, "{:?}", field_name)
+        let field_name = match self {
+            StreamingAccountDataField::Pnl => "PNL",
+            StreamingAccountDataField::Deposit => "DEPOSIT",
+            StreamingAccountDataField::AvailableCash => "AVAILABLE_CASH",
+            StreamingAccountDataField::PnlLr => "PNL_LR",
+            StreamingAccountDataField::PnlNlr => "PNL_NLR",
+            StreamingAccountDataField::Funds => "FUNDS",
+            StreamingAccountDataField::Margin => "MARGIN",
+            StreamingAccountDataField::MarginLr => "MARGIN_LR",
+            StreamingAccountDataField::MarginNlr => "MARGIN_NLR",
+            StreamingAccountDataField::AvailableToDeal => "AVAILABLE_TO_DEAL",
+            StreamingAccountDataField::Equity => "EQUITY",
+            StreamingAccountDataField::EquityUsed => "EQUITY_USED",
+        };
+        write!(f, "{}", field_name)
     }
 }
 

@@ -66,6 +66,46 @@ pub struct PriceFields {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub low: Option<f64>,
 
+    /// Current bid price for the instrument
+    #[serde(rename = "BID")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bid: Option<f64>,
+
+    /// Current offer (ask) price for the instrument
+    #[serde(rename = "OFFER")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub offer: Option<f64>,
+
+    /// Price change from previous close
+    #[serde(rename = "CHANGE")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub change: Option<f64>,
+
+    /// Percentage change from previous close
+    #[serde(rename = "CHANGE_PCT")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub change_pct: Option<f64>,
+
+    /// Market data delay in seconds
+    #[serde(rename = "MARKET_DELAY")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub market_delay: Option<f64>,
+
+    /// Current market state (e.g., "OPEN", "CLOSED", "SUSPENDED")
+    #[serde(rename = "MARKET_STATE")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub market_state: Option<String>,
+
+    /// Timestamp of the last price update
+    #[serde(rename = "UPDATE_TIME")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub update_time: Option<String>,
+
     /// Unique identifier for the bid quote
     #[serde(rename = "BIDQUOTEID")]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -619,6 +659,14 @@ impl PriceData {
             mid_open: parse_float("MID_OPEN")?,
             high: parse_float("HIGH")?,
             low: parse_float("LOW")?,
+            bid: parse_float("BID")?,
+            offer: parse_float("OFFER")?,
+            change: parse_float("CHANGE")?,
+            change_pct: parse_float("CHANGE_PCT")?,
+            market_delay: parse_float("MARKET_DELAY")?,
+            market_state: get_field("MARKET_STATE"),
+            update_time: get_field("UPDATE_TIME"),
+
             bid_quote_id: get_field("BIDQUOTEID"),
             ask_quote_id: get_field("ASKQUOTEID"),
 
