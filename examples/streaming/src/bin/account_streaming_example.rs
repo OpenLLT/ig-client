@@ -42,9 +42,7 @@ async fn main() -> Result<(), AppError> {
 
     // Set up the account subscription (non-blocking)
     info!("Setting up account data subscription...");
-    let mut receiver = client
-        .account_subscribe(fields)
-        .await?;
+    let mut receiver = client.account_subscribe(fields).await?;
 
     // Spawn a task to handle incoming account data updates
     tokio::spawn(async move {
@@ -52,11 +50,6 @@ async fn main() -> Result<(), AppError> {
             info!("Account update: {}", account_data);
         }
     });
-
-    // You can also add other subscriptions
-    // client.market_subscribe(...).await?;
-    // client.price_subscribe(...).await?;
-    // client.trade_subscribe(...).await?;
 
     // Connect and maintain the connection
     // This will block until SIGINT/SIGTERM or connection failure

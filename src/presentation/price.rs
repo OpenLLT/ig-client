@@ -46,219 +46,219 @@ pub struct PriceData {
 }
 
 /// Price field data containing bid, offer, and market status information
-#[derive(DebugPretty, Clone, Serialize, Deserialize, Default)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default)]
 pub struct PriceFields {
     #[serde(rename = "MID_OPEN")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub mid_open: Option<f64>,
 
     #[serde(rename = "HIGH")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub high: Option<f64>,
 
     #[serde(rename = "LOW")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub low: Option<f64>,
 
     #[serde(rename = "BIDQUOTEID")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bid_quote_id: Option<String>,
 
     #[serde(rename = "ASKQUOTEID")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub ask_quote_id: Option<String>,
 
     // Bid ladder prices
     #[serde(rename = "BIDPRICE1")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bid_price1: Option<f64>,
 
     #[serde(rename = "BIDPRICE2")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bid_price2: Option<f64>,
 
     #[serde(rename = "BIDPRICE3")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bid_price3: Option<f64>,
 
     #[serde(rename = "BIDPRICE4")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bid_price4: Option<f64>,
 
     #[serde(rename = "BIDPRICE5")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bid_price5: Option<f64>,
 
     // Ask ladder prices
     #[serde(rename = "ASKPRICE1")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub ask_price1: Option<f64>,
 
     #[serde(rename = "ASKPRICE2")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub ask_price2: Option<f64>,
 
     #[serde(rename = "ASKPRICE3")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub ask_price3: Option<f64>,
 
     #[serde(rename = "ASKPRICE4")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub ask_price4: Option<f64>,
 
     #[serde(rename = "ASKPRICE5")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub ask_price5: Option<f64>,
 
     // Bid sizes
     #[serde(rename = "BIDSIZE1")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bid_size1: Option<f64>,
 
     #[serde(rename = "BIDSIZE2")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bid_size2: Option<f64>,
 
     #[serde(rename = "BIDSIZE3")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bid_size3: Option<f64>,
 
     #[serde(rename = "BIDSIZE4")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bid_size4: Option<f64>,
 
     #[serde(rename = "BIDSIZE5")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bid_size5: Option<f64>,
 
     // Ask sizes
     #[serde(rename = "ASKSIZE1")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub ask_size1: Option<f64>,
 
     #[serde(rename = "ASKSIZE2")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub ask_size2: Option<f64>,
 
     #[serde(rename = "ASKSIZE3")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub ask_size3: Option<f64>,
 
     #[serde(rename = "ASKSIZE4")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub ask_size4: Option<f64>,
 
     #[serde(rename = "ASKSIZE5")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub ask_size5: Option<f64>,
 
     // Currencies
     #[serde(rename = "CURRENCY0")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub currency0: Option<String>,
 
     #[serde(rename = "CURRENCY1")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub currency1: Option<String>,
 
     #[serde(rename = "CURRENCY2")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub currency2: Option<String>,
 
     #[serde(rename = "CURRENCY3")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub currency3: Option<String>,
 
     #[serde(rename = "CURRENCY4")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub currency4: Option<String>,
 
     #[serde(rename = "CURRENCY5")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub currency5: Option<String>,
 
     // Bid size thresholds
     #[serde(rename = "C1BIDSIZE1-5")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub c1_bid_size: Option<f64>,
 
     #[serde(rename = "C2BIDSIZE1-5")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub c2_bid_size: Option<f64>,
 
     #[serde(rename = "C3BIDSIZE1-5")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub c3_bid_size: Option<f64>,
 
     #[serde(rename = "C4BIDSIZE1-5")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub c4_bid_size: Option<f64>,
 
     #[serde(rename = "C5BIDSIZE1-5")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub c5_bid_size: Option<f64>,
 
     // Ask size thresholds
     #[serde(rename = "C1ASKSIZE1-5")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub c1_ask_size: Option<f64>,
 
     #[serde(rename = "C2ASKSIZE1-5")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub c2_ask_size: Option<f64>,
 
     #[serde(rename = "C3ASKSIZE1-5")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub c3_ask_size: Option<f64>,
 
     #[serde(rename = "C4ASKSIZE1-5")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub c4_ask_size: Option<f64>,
 
     #[serde(rename = "C5ASKSIZE1-5")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub c5_ask_size: Option<f64>,
 
     #[serde(rename = "TIMESTAMP")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<f64>,
 
     #[serde(rename = "DLG_FLAG")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub dealing_flag: Option<DealingFlag>,
 }
 

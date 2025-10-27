@@ -28,9 +28,8 @@ async fn main() -> Result<(), AppError> {
 
     // Define the instruments to subscribe to
     let epics = vec![
-        "IX.D.DAX.DAILY.IP".to_string(),  // Germany 40
-        "IX.D.FTSE.DAILY.IP".to_string(), // UK 100
-        "IX.D.DOW.DAILY.IP".to_string(),  // Wall Street
+        "OP.D.OTCBTCWK.114500C.IP".to_string(),
+        "DO.D.OTCDETH.21.IP".to_string(),
     ];
 
     // Define which price fields we want to receive
@@ -58,9 +57,7 @@ async fn main() -> Result<(), AppError> {
 
     // Set up the price subscription (non-blocking)
     info!("Setting up price data subscription...");
-    let mut receiver = client
-        .price_subscribe(epics.clone(), fields)
-        .await?;
+    let mut receiver = client.price_subscribe(epics.clone(), fields).await?;
 
     // Spawn a task to handle incoming price data updates
     tokio::spawn(async move {

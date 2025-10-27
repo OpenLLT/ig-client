@@ -76,7 +76,13 @@ impl Display for StreamingMarketField {
 pub(crate) fn get_streaming_market_fields(fields: &HashSet<StreamingMarketField>) -> Vec<String> {
     let mut fields_vec = Vec::new();
     for field in fields {
-        fields_vec.push(serde_json::to_string(field).unwrap());
+        // Serialize to a JSON value and extract the underlying string without quotes
+        let val = serde_json::to_value(field).expect("Failed to serialize StreamingMarketField");
+        match val {
+            serde_json::Value::String(s) => fields_vec.push(s),
+            // Fallback: use Debug which yields SCREAMING_SNAKE_CASE variant name
+            _ => fields_vec.push(format!("{:?}", field)),
+        }
     }
     fields_vec
 }
@@ -86,9 +92,10 @@ pub(crate) fn get_streaming_market_fields(fields: &HashSet<StreamingMarketField>
 /// These fields represent the various price data points that can be subscribed to
 /// in the IG Markets streaming API for price updates.
 #[derive(Clone, Deserialize, Serialize, PartialEq, Eq, Default, Hash)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[serde(rename_all = "UPPERCASE")]
 pub enum StreamingPriceField {
     /// Mid open price
+    #[serde(rename = "MID_OPEN")]
     MidOpen,
     /// High price
     High,
@@ -254,6 +261,7 @@ pub enum StreamingPriceField {
     /// Timestamp of the price update
     Timestamp,
     /// Dealing flag
+    #[serde(rename = "DLG_FLAG")]
     DlgFlag,
 }
 
@@ -285,9 +293,126 @@ impl Display for StreamingPriceField {
 /// This function will panic if the serialization of any `StreamingPriceField` fails.
 ///
 pub(crate) fn get_streaming_price_fields(fields: &HashSet<StreamingPriceField>) -> Vec<String> {
-    let mut fields_vec = Vec::new();
+    // Map each enum variant to the exact IG Lightstreamer field identifier.
+    let map_field = |f: &StreamingPriceField| -> &'static str {
+        match f {
+            // Core prices
+            StreamingPriceField::MidOpen => "MID_OPEN",
+            StreamingPriceField::High => "HIGH",
+            StreamingPriceField::Low => "LOW",
+            StreamingPriceField::BidQuoteId => "BIDQUOTEID",
+            StreamingPriceField::AskQuoteId => "ASKQUOTEID",
+
+            // Bid ladder prices
+            StreamingPriceField::BidPrice1 => "BIDPRICE1",
+            StreamingPriceField::BidPrice2 => "BIDPRICE2",
+            StreamingPriceField::BidPrice3 => "BIDPRICE3",
+            StreamingPriceField::BidPrice4 => "BIDPRICE4",
+            StreamingPriceField::BidPrice5 => "BIDPRICE5",
+
+            // Ask ladder prices
+            StreamingPriceField::AskPrice1 => "ASKPRICE1",
+            StreamingPriceField::AskPrice2 => "ASKPRICE2",
+            StreamingPriceField::AskPrice3 => "ASKPRICE3",
+            StreamingPriceField::AskPrice4 => "ASKPRICE4",
+            StreamingPriceField::AskPrice5 => "ASKPRICE5",
+
+            // Bid sizes
+            StreamingPriceField::BidSize1 => "BIDSIZE1",
+            StreamingPriceField::BidSize2 => "BIDSIZE2",
+            StreamingPriceField::BidSize3 => "BIDSIZE3",
+            StreamingPriceField::BidSize4 => "BIDSIZE4",
+            StreamingPriceField::BidSize5 => "BIDSIZE5",
+
+            // Ask sizes
+            StreamingPriceField::AskSize1 => "ASKSIZE1",
+            StreamingPriceField::AskSize2 => "ASKSIZE2",
+            StreamingPriceField::AskSize3 => "ASKSIZE3",
+            StreamingPriceField::AskSize4 => "ASKSIZE4",
+            StreamingPriceField::AskSize5 => "ASKSIZE5",
+
+            // Currencies
+            StreamingPriceField::Currency0 => "CURRENCY0",
+            StreamingPriceField::Currency1 => "CURRENCY1",
+            StreamingPriceField::Currency2 => "CURRENCY2",
+            StreamingPriceField::Currency3 => "CURRENCY3",
+            StreamingPriceField::Currency4 => "CURRENCY4",
+            StreamingPriceField::Currency5 => "CURRENCY5",
+
+            // Currency 1 bid sizes
+            StreamingPriceField::C1BidSize1 => "C1BIDSIZE1",
+            StreamingPriceField::C1BidSize2 => "C1BIDSIZE2",
+            StreamingPriceField::C1BidSize3 => "C1BIDSIZE3",
+            StreamingPriceField::C1BidSize4 => "C1BIDSIZE4",
+            StreamingPriceField::C1BidSize5 => "C1BIDSIZE5",
+            // Currency 1 ask sizes
+            StreamingPriceField::C1AskSize1 => "C1ASKSIZE1",
+            StreamingPriceField::C1AskSize2 => "C1ASKSIZE2",
+            StreamingPriceField::C1AskSize3 => "C1ASKSIZE3",
+            StreamingPriceField::C1AskSize4 => "C1ASKSIZE4",
+            StreamingPriceField::C1AskSize5 => "C1ASKSIZE5",
+
+            // Currency 2 bid sizes
+            StreamingPriceField::C2BidSize1 => "C2BIDSIZE1",
+            StreamingPriceField::C2BidSize2 => "C2BIDSIZE2",
+            StreamingPriceField::C2BidSize3 => "C2BIDSIZE3",
+            StreamingPriceField::C2BidSize4 => "C2BIDSIZE4",
+            StreamingPriceField::C2BidSize5 => "C2BIDSIZE5",
+            // Currency 2 ask sizes
+            StreamingPriceField::C2AskSize1 => "C2ASKSIZE1",
+            StreamingPriceField::C2AskSize2 => "C2ASKSIZE2",
+            StreamingPriceField::C2AskSize3 => "C2ASKSIZE3",
+            StreamingPriceField::C2AskSize4 => "C2ASKSIZE4",
+            StreamingPriceField::C2AskSize5 => "C2ASKSIZE5",
+
+            // Currency 3 bid sizes
+            StreamingPriceField::C3BidSize1 => "C3BIDSIZE1",
+            StreamingPriceField::C3BidSize2 => "C3BIDSIZE2",
+            StreamingPriceField::C3BidSize3 => "C3BIDSIZE3",
+            StreamingPriceField::C3BidSize4 => "C3BIDSIZE4",
+            StreamingPriceField::C3BidSize5 => "C3BIDSIZE5",
+            // Currency 3 ask sizes
+            StreamingPriceField::C3AskSize1 => "C3ASKSIZE1",
+            StreamingPriceField::C3AskSize2 => "C3ASKSIZE2",
+            StreamingPriceField::C3AskSize3 => "C3ASKSIZE3",
+            StreamingPriceField::C3AskSize4 => "C3ASKSIZE4",
+            StreamingPriceField::C3AskSize5 => "C3ASKSIZE5",
+
+            // Currency 4 bid sizes
+            StreamingPriceField::C4BidSize1 => "C4BIDSIZE1",
+            StreamingPriceField::C4BidSize2 => "C4BIDSIZE2",
+            StreamingPriceField::C4BidSize3 => "C4BIDSIZE3",
+            StreamingPriceField::C4BidSize4 => "C4BIDSIZE4",
+            StreamingPriceField::C4BidSize5 => "C4BIDSIZE5",
+            // Currency 4 ask sizes
+            StreamingPriceField::C4AskSize1 => "C4ASKSIZE1",
+            StreamingPriceField::C4AskSize2 => "C4ASKSIZE2",
+            StreamingPriceField::C4AskSize3 => "C4ASKSIZE3",
+            StreamingPriceField::C4AskSize4 => "C4ASKSIZE4",
+            StreamingPriceField::C4AskSize5 => "C4ASKSIZE5",
+
+            // Currency 5 bid sizes
+            StreamingPriceField::C5BidSize1 => "C5BIDSIZE1",
+            StreamingPriceField::C5BidSize2 => "C5BIDSIZE2",
+            StreamingPriceField::C5BidSize3 => "C5BIDSIZE3",
+            StreamingPriceField::C5BidSize4 => "C5BIDSIZE4",
+            StreamingPriceField::C5BidSize5 => "C5BIDSIZE5",
+            // Currency 5 ask sizes
+            StreamingPriceField::C5AskSize1 => "C5ASKSIZE1",
+            StreamingPriceField::C5AskSize2 => "C5ASKSIZE2",
+            StreamingPriceField::C5AskSize3 => "C5ASKSIZE3",
+            StreamingPriceField::C5AskSize4 => "C5ASKSIZE4",
+            StreamingPriceField::C5AskSize5 => "C5ASKSIZE5",
+
+            // Misc
+            StreamingPriceField::Timestamp => "TIMESTAMP",
+            StreamingPriceField::DlgFlag => "DLG_FLAG",
+        }
+    };
+
+    let mut fields_vec = Vec::with_capacity(fields.len());
     for field in fields {
-        fields_vec.push(serde_json::to_string(field).unwrap());
+        fields_vec.push(map_field(field).to_string());
     }
     fields_vec
 }
@@ -358,7 +483,12 @@ pub(crate) fn get_streaming_account_data_fields(
 ) -> Vec<String> {
     let mut fields_vec = Vec::new();
     for field in fields {
-        fields_vec.push(serde_json::to_string(field).unwrap());
+        let val =
+            serde_json::to_value(field).expect("Failed to serialize StreamingAccountDataField");
+        match val {
+            serde_json::Value::String(s) => fields_vec.push(s),
+            _ => fields_vec.push(format!("{:?}", field)),
+        }
     }
     fields_vec
 }

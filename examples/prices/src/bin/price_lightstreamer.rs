@@ -42,14 +42,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     let listener = Listener::new(callback);
-    subscription.set_data_adapter(Some("Pricing".to_string()))?;
+    subscription.set_data_adapter(Some("PRICING".to_string()))?;
     subscription.set_requested_snapshot(Some(Snapshot::Yes))?;
     subscription.add_listener(Box::new(listener));
 
     // Create a new Lightstreamer client instance and wrap it in an Arc<Mutex<>> so it can be shared across threads.
     let client = Arc::new(Mutex::new(LightstreamerClient::new(
         Some(ws_info.server.as_str()),
-        Some("Pricing"),
+        Some("PRICING"),
         Some(&ws_info.account_id),
         Some(&password),
     )?));

@@ -71,9 +71,7 @@ async fn main() -> Result<(), AppError> {
         StreamingPriceField::Timestamp,
     ]);
 
-    let mut price_receiver = client
-        .price_subscribe(epics.clone(), price_fields)
-        .await?;
+    let mut price_receiver = client.price_subscribe(epics.clone(), price_fields).await?;
 
     tokio::spawn(async move {
         while let Some(price_data) = price_receiver.recv().await {
@@ -83,9 +81,7 @@ async fn main() -> Result<(), AppError> {
 
     // 3. Subscribe to trade updates
     info!("Setting up trade subscription...");
-    let mut trade_receiver = client
-        .trade_subscribe()
-        .await?;
+    let mut trade_receiver = client.trade_subscribe().await?;
 
     tokio::spawn(async move {
         while let Some(trade_data) = trade_receiver.recv().await {
@@ -103,9 +99,7 @@ async fn main() -> Result<(), AppError> {
         StreamingAccountDataField::AvailableCash,
     ]);
 
-    let mut account_receiver = client
-        .account_subscribe(account_fields)
-        .await?;
+    let mut account_receiver = client.account_subscribe(account_fields).await?;
 
     tokio::spawn(async move {
         while let Some(account_data) = account_receiver.recv().await {
