@@ -29,12 +29,18 @@ pub enum ChartScale {
 /// Chart data structure that represents price chart information
 /// Contains both tick and candle data depending on the chart scale
 pub struct ChartData {
+    /// The full Lightstreamer item name (e.g., `CHART:EPIC:TIMESCALE`)
     pub item_name: String,
+    /// The 1-based position of the item in the subscription
     pub item_pos: i32,
+    /// Resolved chart scale for this update (derived from item name or `scale`)
     #[serde(default)]
     pub scale: ChartScale, // Derived from the item name or the {scale} field
+    /// All current field values for the item
     pub fields: ChartFields,
+    /// Only the fields that changed in this update
     pub changed_fields: ChartFields,
+    /// Whether this update is part of the initial snapshot
     pub is_snapshot: bool,
 }
 
@@ -45,128 +51,153 @@ pub struct ChartFields {
     #[serde(rename = "LTV")]
     #[serde(with = "string_as_float_opt")]
     #[serde(default)]
+    /// Last traded volume for the period (or tick)
     pub last_traded_volume: Option<f64>,
 
     #[serde(rename = "TTV")]
     #[serde(with = "string_as_float_opt")]
     #[serde(default)]
+    /// Incremental trading volume for the period
     pub incremental_trading_volume: Option<f64>,
 
     #[serde(rename = "UTM")]
     #[serde(with = "string_as_float_opt")]
     #[serde(default)]
+    /// Update time timestamp for the data point
     pub update_time: Option<f64>,
 
     #[serde(rename = "DAY_OPEN_MID")]
     #[serde(with = "string_as_float_opt")]
     #[serde(default)]
+    /// Day opening mid price
     pub day_open_mid: Option<f64>,
 
     #[serde(rename = "DAY_NET_CHG_MID")]
     #[serde(with = "string_as_float_opt")]
     #[serde(default)]
+    /// Day net change in mid price
     pub day_net_change_mid: Option<f64>,
 
     #[serde(rename = "DAY_PERC_CHG_MID")]
     #[serde(with = "string_as_float_opt")]
     #[serde(default)]
+    /// Day percentage change in mid price
     pub day_percentage_change_mid: Option<f64>,
 
     #[serde(rename = "DAY_HIGH")]
     #[serde(with = "string_as_float_opt")]
     #[serde(default)]
+    /// Day high price
     pub day_high: Option<f64>,
 
     #[serde(rename = "DAY_LOW")]
     #[serde(with = "string_as_float_opt")]
     #[serde(default)]
+    /// Day low price
     pub day_low: Option<f64>,
 
     // Fields specific to TICK
     #[serde(rename = "BID")]
     #[serde(with = "string_as_float_opt")]
     #[serde(default)]
+    /// Current bid price (for tick data)
     pub bid: Option<f64>,
 
     #[serde(rename = "OFR")]
     #[serde(with = "string_as_float_opt")]
     #[serde(default)]
+    /// Current offer/ask price (for tick data)
     pub offer: Option<f64>,
 
     #[serde(rename = "LTP")]
     #[serde(with = "string_as_float_opt")]
     #[serde(default)]
+    /// Last traded price (for tick data)
     pub last_traded_price: Option<f64>,
 
     // Fields specific to CANDLE
     #[serde(rename = "OFR_OPEN")]
     #[serde(with = "string_as_float_opt")]
     #[serde(default)]
+    /// Offer opening price for the candle period
     pub offer_open: Option<f64>,
 
     #[serde(rename = "OFR_HIGH")]
     #[serde(with = "string_as_float_opt")]
     #[serde(default)]
+    /// Offer high price for the candle period
     pub offer_high: Option<f64>,
 
     #[serde(rename = "OFR_LOW")]
     #[serde(with = "string_as_float_opt")]
     #[serde(default)]
+    /// Offer low price for the candle period
     pub offer_low: Option<f64>,
 
     #[serde(rename = "OFR_CLOSE")]
     #[serde(with = "string_as_float_opt")]
     #[serde(default)]
+    /// Offer closing price for the candle period
     pub offer_close: Option<f64>,
 
     #[serde(rename = "BID_OPEN")]
     #[serde(with = "string_as_float_opt")]
     #[serde(default)]
+    /// Bid opening price for the candle period
     pub bid_open: Option<f64>,
 
     #[serde(rename = "BID_HIGH")]
     #[serde(with = "string_as_float_opt")]
     #[serde(default)]
+    /// Bid high price for the candle period
     pub bid_high: Option<f64>,
 
     #[serde(rename = "BID_LOW")]
     #[serde(with = "string_as_float_opt")]
     #[serde(default)]
+    /// Bid low price for the candle period
     pub bid_low: Option<f64>,
 
     #[serde(rename = "BID_CLOSE")]
     #[serde(with = "string_as_float_opt")]
     #[serde(default)]
+    /// Bid closing price for the candle period
     pub bid_close: Option<f64>,
 
     #[serde(rename = "LTP_OPEN")]
     #[serde(with = "string_as_float_opt")]
     #[serde(default)]
+    /// Last traded price opening for the candle period
     pub ltp_open: Option<f64>,
 
     #[serde(rename = "LTP_HIGH")]
     #[serde(with = "string_as_float_opt")]
     #[serde(default)]
+    /// Last traded price high for the candle period
     pub ltp_high: Option<f64>,
 
     #[serde(rename = "LTP_LOW")]
     #[serde(with = "string_as_float_opt")]
     #[serde(default)]
+    /// Last traded price low for the candle period
     pub ltp_low: Option<f64>,
 
     #[serde(rename = "LTP_CLOSE")]
     #[serde(with = "string_as_float_opt")]
     #[serde(default)]
+    /// Last traded price closing for the candle period
     pub ltp_close: Option<f64>,
 
     #[serde(rename = "CONS_END")]
     #[serde(with = "string_as_float_opt")]
     #[serde(default)]
+    /// Candle end timestamp
     pub candle_end: Option<f64>,
 
     #[serde(rename = "CONS_TICK_COUNT")]
     #[serde(with = "string_as_float_opt")]
     #[serde(default)]
+    /// Number of ticks consolidated in this candle
     pub candle_tick_count: Option<f64>,
 }
 

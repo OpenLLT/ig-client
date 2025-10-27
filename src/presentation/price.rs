@@ -48,215 +48,496 @@ pub struct PriceData {
 /// Price field data containing bid, offer, and market status information
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default)]
 pub struct PriceFields {
+    /// The opening price at the middle of the bid-ask spread
     #[serde(rename = "MID_OPEN")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mid_open: Option<f64>,
 
+    /// The highest price reached during the trading session
     #[serde(rename = "HIGH")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub high: Option<f64>,
 
+    /// The lowest price reached during the trading session
     #[serde(rename = "LOW")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub low: Option<f64>,
 
+    /// Unique identifier for the bid quote
     #[serde(rename = "BIDQUOTEID")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bid_quote_id: Option<String>,
 
+    /// Unique identifier for the ask quote
     #[serde(rename = "ASKQUOTEID")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ask_quote_id: Option<String>,
 
     // Bid ladder prices
+    /// First level bid price in the order book
     #[serde(rename = "BIDPRICE1")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bid_price1: Option<f64>,
 
+    /// Second level bid price in the order book
     #[serde(rename = "BIDPRICE2")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bid_price2: Option<f64>,
 
+    /// Third level bid price in the order book
     #[serde(rename = "BIDPRICE3")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bid_price3: Option<f64>,
 
+    /// Fourth level bid price in the order book
     #[serde(rename = "BIDPRICE4")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bid_price4: Option<f64>,
 
+    /// Fifth level bid price in the order book
     #[serde(rename = "BIDPRICE5")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bid_price5: Option<f64>,
 
     // Ask ladder prices
+    /// First level ask price in the order book
     #[serde(rename = "ASKPRICE1")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ask_price1: Option<f64>,
 
+    /// Second level ask price in the order book
     #[serde(rename = "ASKPRICE2")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ask_price2: Option<f64>,
 
+    /// Third level ask price in the order book
     #[serde(rename = "ASKPRICE3")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ask_price3: Option<f64>,
 
+    /// Fourth level ask price in the order book
     #[serde(rename = "ASKPRICE4")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ask_price4: Option<f64>,
 
+    /// Fifth level ask price in the order book
     #[serde(rename = "ASKPRICE5")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ask_price5: Option<f64>,
 
     // Bid sizes
+    /// Volume available at the first level bid price
     #[serde(rename = "BIDSIZE1")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bid_size1: Option<f64>,
 
+    /// Volume available at the second level bid price
     #[serde(rename = "BIDSIZE2")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bid_size2: Option<f64>,
 
+    /// Volume available at the third level bid price
     #[serde(rename = "BIDSIZE3")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bid_size3: Option<f64>,
 
+    /// Volume available at the fourth level bid price
     #[serde(rename = "BIDSIZE4")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bid_size4: Option<f64>,
 
+    /// Volume available at the fifth level bid price
     #[serde(rename = "BIDSIZE5")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bid_size5: Option<f64>,
 
     // Ask sizes
+    /// Volume available at the first level ask price
     #[serde(rename = "ASKSIZE1")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ask_size1: Option<f64>,
 
+    /// Volume available at the second level ask price
     #[serde(rename = "ASKSIZE2")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ask_size2: Option<f64>,
 
+    /// Volume available at the third level ask price
     #[serde(rename = "ASKSIZE3")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ask_size3: Option<f64>,
 
+    /// Volume available at the fourth level ask price
     #[serde(rename = "ASKSIZE4")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ask_size4: Option<f64>,
 
+    /// Volume available at the fifth level ask price
     #[serde(rename = "ASKSIZE5")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ask_size5: Option<f64>,
 
-    // Currencies
+    /// Base currency code for the trading pair
     #[serde(rename = "CURRENCY0")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub currency0: Option<String>,
 
+    /// First alternative currency code
     #[serde(rename = "CURRENCY1")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub currency1: Option<String>,
 
+    /// Second alternative currency code
     #[serde(rename = "CURRENCY2")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub currency2: Option<String>,
 
+    /// Third alternative currency code
     #[serde(rename = "CURRENCY3")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub currency3: Option<String>,
 
+    /// Fourth alternative currency code
     #[serde(rename = "CURRENCY4")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub currency4: Option<String>,
 
+    /// Fifth alternative currency code
     #[serde(rename = "CURRENCY5")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub currency5: Option<String>,
 
-    // Bid size thresholds
-    #[serde(rename = "C1BIDSIZE1-5")]
+    /// Bid size for currency 1 at level 1
+    #[serde(rename = "C1BIDSIZE1")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub c1_bid_size: Option<f64>,
+    pub c1_bid_size_1: Option<f64>,
 
-    #[serde(rename = "C2BIDSIZE1-5")]
+    /// Bid size for currency 1 at level 2
+    #[serde(rename = "C1BIDSIZE2")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub c2_bid_size: Option<f64>,
+    pub c1_bid_size_2: Option<f64>,
 
-    #[serde(rename = "C3BIDSIZE1-5")]
+    /// Bid size for currency 1 at level 3
+    #[serde(rename = "C1BIDSIZE3")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub c3_bid_size: Option<f64>,
+    pub c1_bid_size_3: Option<f64>,
 
-    #[serde(rename = "C4BIDSIZE1-5")]
+    /// Bid size for currency 1 at level 4
+    #[serde(rename = "C1BIDSIZE4")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub c4_bid_size: Option<f64>,
+    pub c1_bid_size_4: Option<f64>,
 
-    #[serde(rename = "C5BIDSIZE1-5")]
+    /// Bid size for currency 1 at level 5
+    #[serde(rename = "C1BIDSIZE5")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub c5_bid_size: Option<f64>,
+    pub c1_bid_size_5: Option<f64>,
 
-    // Ask size thresholds
-    #[serde(rename = "C1ASKSIZE1-5")]
+    /// Bid size for currency 2 at level 1
+    #[serde(rename = "C2BIDSIZE1")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub c1_ask_size: Option<f64>,
+    pub c2_bid_size_1: Option<f64>,
 
-    #[serde(rename = "C2ASKSIZE1-5")]
+    /// Bid size for currency 2 at level 2
+    #[serde(rename = "C2BIDSIZE2")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub c2_ask_size: Option<f64>,
+    pub c2_bid_size_2: Option<f64>,
 
-    #[serde(rename = "C3ASKSIZE1-5")]
+    /// Bid size for currency 2 at level 3
+    #[serde(rename = "C2BIDSIZE3")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub c3_ask_size: Option<f64>,
+    pub c2_bid_size_3: Option<f64>,
 
-    #[serde(rename = "C4ASKSIZE1-5")]
+    /// Bid size for currency 2 at level 4
+    #[serde(rename = "C2BIDSIZE4")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub c4_ask_size: Option<f64>,
+    pub c2_bid_size_4: Option<f64>,
 
-    #[serde(rename = "C5ASKSIZE1-5")]
+    /// Bid size for currency 2 at level 5
+    #[serde(rename = "C2BIDSIZE5")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub c5_ask_size: Option<f64>,
+    pub c2_bid_size_5: Option<f64>,
 
+    /// Bid size for currency 3 at level 1
+    #[serde(rename = "C3BIDSIZE1")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c3_bid_size_1: Option<f64>,
+
+    /// Bid size for currency 3 at level 2
+    #[serde(rename = "C3BIDSIZE2")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c3_bid_size_2: Option<f64>,
+
+    /// Bid size for currency 3 at level 3
+    #[serde(rename = "C3BIDSIZE3")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c3_bid_size_3: Option<f64>,
+
+    /// Bid size for currency 3 at level 4
+    #[serde(rename = "C3BIDSIZE4")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c3_bid_size_4: Option<f64>,
+
+    /// Bid size for currency 3 at level 5
+    #[serde(rename = "C3BIDSIZE5")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c3_bid_size_5: Option<f64>,
+
+    /// Bid size for currency 4 at level 1
+    #[serde(rename = "C4BIDSIZE1")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c4_bid_size_1: Option<f64>,
+
+    /// Bid size for currency 4 at level 2
+    #[serde(rename = "C4BIDSIZE2")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c4_bid_size_2: Option<f64>,
+
+    /// Bid size for currency 4 at level 3
+    #[serde(rename = "C4BIDSIZE3")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c4_bid_size_3: Option<f64>,
+
+    /// Bid size for currency 4 at level 4
+    #[serde(rename = "C4BIDSIZE4")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c4_bid_size_4: Option<f64>,
+
+    /// Bid size for currency 4 at level 5
+    #[serde(rename = "C4BIDSIZE5")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c4_bid_size_5: Option<f64>,
+
+    /// Bid size for currency 5 at level 1
+    #[serde(rename = "C5BIDSIZE1")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c5_bid_size_1: Option<f64>,
+
+    /// Bid size for currency 5 at level 2
+    #[serde(rename = "C5BIDSIZE2")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c5_bid_size_2: Option<f64>,
+
+    /// Bid size for currency 5 at level 3
+    #[serde(rename = "C5BIDSIZE3")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c5_bid_size_3: Option<f64>,
+
+    /// Bid size for currency 5 at level 4
+    #[serde(rename = "C5BIDSIZE4")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c5_bid_size_4: Option<f64>,
+
+    /// Bid size for currency 5 at level 5
+    #[serde(rename = "C5BIDSIZE5")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c5_bid_size_5: Option<f64>,
+
+    // Ask sizes for different currencies
+    /// Ask size for currency 1 at level 1
+    #[serde(rename = "C1ASKSIZE1")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c1_ask_size_1: Option<f64>,
+
+    /// Ask size for currency 1 at level 2
+    #[serde(rename = "C1ASKSIZE2")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c1_ask_size_2: Option<f64>,
+
+    /// Ask size for currency 1 at level 3
+    #[serde(rename = "C1ASKSIZE3")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c1_ask_size_3: Option<f64>,
+
+    /// Ask size for currency 1 at level 4
+    #[serde(rename = "C1ASKSIZE4")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c1_ask_size_4: Option<f64>,
+
+    /// Ask size for currency 1 at level 5
+    #[serde(rename = "C1ASKSIZE5")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c1_ask_size_5: Option<f64>,
+
+    /// Ask size for currency 2 at level 1
+    #[serde(rename = "C2ASKSIZE1")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c2_ask_size_1: Option<f64>,
+
+    /// Ask size for currency 2 at level 2
+    #[serde(rename = "C2ASKSIZE2")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c2_ask_size_2: Option<f64>,
+
+    /// Ask size for currency 2 at level 3
+    #[serde(rename = "C2ASKSIZE3")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c2_ask_size_3: Option<f64>,
+
+    /// Ask size for currency 2 at level 4
+    #[serde(rename = "C2ASKSIZE4")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c2_ask_size_4: Option<f64>,
+
+    /// Ask size for currency 2 at level 5
+    #[serde(rename = "C2ASKSIZE5")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c2_ask_size_5: Option<f64>,
+
+    /// Ask size for currency 3 at level 1
+    #[serde(rename = "C3ASKSIZE1")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c3_ask_size_1: Option<f64>,
+
+    /// Ask size for currency 3 at level 2
+    #[serde(rename = "C3ASKSIZE2")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c3_ask_size_2: Option<f64>,
+
+    /// Ask size for currency 3 at level 3
+    #[serde(rename = "C3ASKSIZE3")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c3_ask_size_3: Option<f64>,
+
+    /// Ask size for currency 3 at level 4
+    #[serde(rename = "C3ASKSIZE4")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c3_ask_size_4: Option<f64>,
+
+    /// Ask size for currency 3 at level 5
+    #[serde(rename = "C3ASKSIZE5")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c3_ask_size_5: Option<f64>,
+
+    /// Ask size for currency 4 at level 1
+    #[serde(rename = "C4ASKSIZE1")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c4_ask_size_1: Option<f64>,
+
+    /// Ask size for currency 4 at level 2
+    #[serde(rename = "C4ASKSIZE2")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c4_ask_size_2: Option<f64>,
+
+    /// Ask size for currency 4 at level 3
+    #[serde(rename = "C4ASKSIZE3")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c4_ask_size_3: Option<f64>,
+
+    /// Ask size for currency 4 at level 4
+    #[serde(rename = "C4ASKSIZE4")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c4_ask_size_4: Option<f64>,
+
+    /// Ask size for currency 4 at level 5
+    #[serde(rename = "C4ASKSIZE5")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c4_ask_size_5: Option<f64>,
+
+    /// Ask size for currency 5 at level 1
+    #[serde(rename = "C5ASKSIZE1")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c5_ask_size_1: Option<f64>,
+
+    /// Ask size for currency 5 at level 2
+    #[serde(rename = "C5ASKSIZE2")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c5_ask_size_2: Option<f64>,
+
+    /// Ask size for currency 5 at level 3
+    #[serde(rename = "C5ASKSIZE3")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c5_ask_size_3: Option<f64>,
+
+    /// Ask size for currency 5 at level 4
+    #[serde(rename = "C5ASKSIZE4")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c5_ask_size_4: Option<f64>,
+
+    /// Ask size for currency 5 at level 5
+    #[serde(rename = "C5ASKSIZE5")]
+    #[serde(with = "string_as_float_opt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c5_ask_size_5: Option<f64>,
+
+    /// The timestamp of the price update in UTC milliseconds since epoch
     #[serde(rename = "TIMESTAMP")]
     #[serde(with = "string_as_float_opt")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<f64>,
 
+    /// Dealing status flag indicating trading availability/state of the market
     #[serde(rename = "DLG_FLAG")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub dealing_flag: Option<DealingFlag>,
@@ -377,19 +658,67 @@ impl PriceData {
             currency4: get_field("CURRENCY4"),
             currency5: get_field("CURRENCY5"),
 
-            // Bid size thresholds
-            c1_bid_size: parse_float("C1BIDSIZE1-5")?,
-            c2_bid_size: parse_float("C2BIDSIZE1-5")?,
-            c3_bid_size: parse_float("C3BIDSIZE1-5")?,
-            c4_bid_size: parse_float("C4BIDSIZE1-5")?,
-            c5_bid_size: parse_float("C5BIDSIZE1-5")?,
+            // Bid size thresholds (expanded 1..5 for C1..C5)
+            c1_bid_size_1: parse_float("C1BIDSIZE1")?,
+            c1_bid_size_2: parse_float("C1BIDSIZE2")?,
+            c1_bid_size_3: parse_float("C1BIDSIZE3")?,
+            c1_bid_size_4: parse_float("C1BIDSIZE4")?,
+            c1_bid_size_5: parse_float("C1BIDSIZE5")?,
 
-            // Ask size thresholds
-            c1_ask_size: parse_float("C1ASKSIZE1-5")?,
-            c2_ask_size: parse_float("C2ASKSIZE1-5")?,
-            c3_ask_size: parse_float("C3ASKSIZE1-5")?,
-            c4_ask_size: parse_float("C4ASKSIZE1-5")?,
-            c5_ask_size: parse_float("C5ASKSIZE1-5")?,
+            c2_bid_size_1: parse_float("C2BIDSIZE1")?,
+            c2_bid_size_2: parse_float("C2BIDSIZE2")?,
+            c2_bid_size_3: parse_float("C2BIDSIZE3")?,
+            c2_bid_size_4: parse_float("C2BIDSIZE4")?,
+            c2_bid_size_5: parse_float("C2BIDSIZE5")?,
+
+            c3_bid_size_1: parse_float("C3BIDSIZE1")?,
+            c3_bid_size_2: parse_float("C3BIDSIZE2")?,
+            c3_bid_size_3: parse_float("C3BIDSIZE3")?,
+            c3_bid_size_4: parse_float("C3BIDSIZE4")?,
+            c3_bid_size_5: parse_float("C3BIDSIZE5")?,
+
+            c4_bid_size_1: parse_float("C4BIDSIZE1")?,
+            c4_bid_size_2: parse_float("C4BIDSIZE2")?,
+            c4_bid_size_3: parse_float("C4BIDSIZE3")?,
+            c4_bid_size_4: parse_float("C4BIDSIZE4")?,
+            c4_bid_size_5: parse_float("C4BIDSIZE5")?,
+
+            c5_bid_size_1: parse_float("C5BIDSIZE1")?,
+            c5_bid_size_2: parse_float("C5BIDSIZE2")?,
+            c5_bid_size_3: parse_float("C5BIDSIZE3")?,
+            c5_bid_size_4: parse_float("C5BIDSIZE4")?,
+            c5_bid_size_5: parse_float("C5BIDSIZE5")?,
+
+            // Ask size thresholds (expanded 1..5 for C1..C5)
+            c1_ask_size_1: parse_float("C1ASKSIZE1")?,
+            c1_ask_size_2: parse_float("C1ASKSIZE2")?,
+            c1_ask_size_3: parse_float("C1ASKSIZE3")?,
+            c1_ask_size_4: parse_float("C1ASKSIZE4")?,
+            c1_ask_size_5: parse_float("C1ASKSIZE5")?,
+
+            c2_ask_size_1: parse_float("C2ASKSIZE1")?,
+            c2_ask_size_2: parse_float("C2ASKSIZE2")?,
+            c2_ask_size_3: parse_float("C2ASKSIZE3")?,
+            c2_ask_size_4: parse_float("C2ASKSIZE4")?,
+            c2_ask_size_5: parse_float("C2ASKSIZE5")?,
+
+            c3_ask_size_1: parse_float("C3ASKSIZE1")?,
+            c3_ask_size_2: parse_float("C3ASKSIZE2")?,
+            c3_ask_size_3: parse_float("C3ASKSIZE3")?,
+            c3_ask_size_4: parse_float("C3ASKSIZE4")?,
+            c3_ask_size_5: parse_float("C3ASKSIZE5")?,
+
+            c4_ask_size_1: parse_float("C4ASKSIZE1")?,
+            c4_ask_size_2: parse_float("C4ASKSIZE2")?,
+            c4_ask_size_3: parse_float("C4ASKSIZE3")?,
+            c4_ask_size_4: parse_float("C4ASKSIZE4")?,
+            c4_ask_size_5: parse_float("C4ASKSIZE5")?,
+
+            c5_ask_size_1: parse_float("C5ASKSIZE1")?,
+            c5_ask_size_2: parse_float("C5ASKSIZE2")?,
+            c5_ask_size_3: parse_float("C5ASKSIZE3")?,
+            c5_ask_size_4: parse_float("C5ASKSIZE4")?,
+            c5_ask_size_5: parse_float("C5ASKSIZE5")?,
 
             timestamp: parse_float("TIMESTAMP")?,
             dealing_flag,
@@ -400,23 +729,5 @@ impl PriceData {
 impl From<&ItemUpdate> for PriceData {
     fn from(item_update: &ItemUpdate) -> Self {
         PriceData::from_item_update(item_update).unwrap_or_default()
-    }
-}
-
-impl std::fmt::Display for PriceFields {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "PriceFields {{ mid_open: {:?}, high: {:?}, low: {:?}, bid_quote_id: {:?}, ask_quote_id: {:?}, bid_price1: {:?}, ask_price1: {:?}, timestamp: {:?}, dealing_flag: {:?} }}",
-            self.mid_open,
-            self.high,
-            self.low,
-            self.bid_quote_id,
-            self.ask_quote_id,
-            self.bid_price1,
-            self.ask_price1,
-            self.timestamp,
-            self.dealing_flag
-        )
     }
 }
