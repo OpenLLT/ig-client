@@ -28,10 +28,8 @@ async fn main() -> Result<(), AppError> {
 
     // Define the instruments to subscribe to
     let epics = vec![
-        "IX.D.DAX.DAILY.IP".to_string(),   // Germany 40
-        "IX.D.FTSE.DAILY.IP".to_string(),  // UK 100
-        "IX.D.DOW.DAILY.IP".to_string(),   // Wall Street
-        "IX.D.SPTRD.DAILY.IP".to_string(), // US 500
+        "OP.D.OTCBTCWK.114500C.IP".to_string(),
+        "DO.D.OTCDETH.21.IP".to_string(),
     ];
 
     // Define which market fields we want to receive
@@ -53,9 +51,7 @@ async fn main() -> Result<(), AppError> {
         "Setting up market data subscription for {} instruments...",
         epics.len()
     );
-    let mut receiver = client
-        .market_subscribe(epics.clone(), fields)
-        .await?;
+    let mut receiver = client.market_subscribe(epics.clone(), fields).await?;
 
     // Spawn a task to handle incoming market data updates
     tokio::spawn(async move {
@@ -63,12 +59,6 @@ async fn main() -> Result<(), AppError> {
             info!("Market update - {}", price_data);
         }
     });
-
-    // You can add more subscriptions here if needed
-    // For example, price data subscriptions:
-    // client.price_subscribe(...).await?;
-    // client.trade_subscribe(...).await?;
-    // client.account_subscribe(...).await?;
 
     // Connect and maintain the connection
     // This will block until SIGINT/SIGTERM or connection failure

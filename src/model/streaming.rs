@@ -76,7 +76,13 @@ impl Display for StreamingMarketField {
 pub(crate) fn get_streaming_market_fields(fields: &HashSet<StreamingMarketField>) -> Vec<String> {
     let mut fields_vec = Vec::new();
     for field in fields {
-        fields_vec.push(serde_json::to_string(field).unwrap());
+        // Serialize to a JSON value and extract the underlying string without quotes
+        let val = serde_json::to_value(field).expect("Failed to serialize StreamingMarketField");
+        match val {
+            serde_json::Value::String(s) => fields_vec.push(s),
+            // Fallback: use Debug which yields SCREAMING_SNAKE_CASE variant name
+            _ => fields_vec.push(format!("{:?}", field)),
+        }
     }
     fields_vec
 }
@@ -287,7 +293,11 @@ impl Display for StreamingPriceField {
 pub(crate) fn get_streaming_price_fields(fields: &HashSet<StreamingPriceField>) -> Vec<String> {
     let mut fields_vec = Vec::new();
     for field in fields {
-        fields_vec.push(serde_json::to_string(field).unwrap());
+        let val = serde_json::to_value(field).expect("Failed to serialize StreamingPriceField");
+        match val {
+            serde_json::Value::String(s) => fields_vec.push(s),
+            _ => fields_vec.push(format!("{:?}", field)),
+        }
     }
     fields_vec
 }
@@ -358,7 +368,12 @@ pub(crate) fn get_streaming_account_data_fields(
 ) -> Vec<String> {
     let mut fields_vec = Vec::new();
     for field in fields {
-        fields_vec.push(serde_json::to_string(field).unwrap());
+        let val =
+            serde_json::to_value(field).expect("Failed to serialize StreamingAccountDataField");
+        match val {
+            serde_json::Value::String(s) => fields_vec.push(s),
+            _ => fields_vec.push(format!("{:?}", field)),
+        }
     }
     fields_vec
 }

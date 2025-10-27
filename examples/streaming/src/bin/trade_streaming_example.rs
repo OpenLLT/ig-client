@@ -39,13 +39,10 @@ async fn main() -> Result<(), AppError> {
     // Set up the trade subscription with comprehensive data handling
     // This subscription will receive all trade-related updates for your account
     info!("Setting up trade data subscription...");
-    let mut receiver = client
-        .trade_subscribe()
-        .await
-        .map_err(|e| {
-            error!("Failed to set up trade subscription: {}", e);
-            e
-        })?;
+    let mut receiver = client.trade_subscribe().await.map_err(|e| {
+        error!("Failed to set up trade subscription: {}", e);
+        e
+    })?;
 
     // Spawn a task to handle incoming trade data updates
     tokio::spawn(async move {

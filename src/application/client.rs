@@ -32,12 +32,14 @@ use crate::presentation::market::{MarketData, MarketDetails};
 use crate::presentation::price::PriceData;
 use async_trait::async_trait;
 use lightstreamer_rs::client::{LightstreamerClient, Transport};
-use lightstreamer_rs::subscription::{ChannelSubscriptionListener, Snapshot, Subscription, SubscriptionMode};
+use lightstreamer_rs::subscription::{
+    ChannelSubscriptionListener, Snapshot, Subscription, SubscriptionMode,
+};
 use lightstreamer_rs::utils::setup_signal_hook;
 use serde_json::Value;
 use std::collections::HashSet;
 use std::sync::Arc;
-use tokio::sync::{mpsc, Mutex, Notify, RwLock};
+use tokio::sync::{Mutex, Notify, RwLock, mpsc};
 use tracing::{debug, error, info, warn};
 
 const MAX_CONNECTION_ATTEMPTS: u64 = 3;
@@ -628,6 +630,9 @@ pub struct StreamerClient {
     account_id: String,
     market_streamer_client: Option<Arc<Mutex<LightstreamerClient>>>,
     price_streamer_client: Option<Arc<Mutex<LightstreamerClient>>>,
+    // Flags indicating whether there is at least one active subscription for each client
+    has_market_stream_subs: bool,
+    has_price_stream_subs: bool,
 }
 
 impl StreamerClient {
@@ -661,10 +666,26 @@ impl StreamerClient {
             Some(&password),
         )?));
 
+        // Force WebSocket streaming transport on both clients to satisfy IG requirements
+        {
+            let mut client = market_streamer_client.lock().await;
+            client
+                .connection_options
+                .set_forced_transport(Some(Transport::WsStreaming));
+        }
+        {
+            let mut client = price_streamer_client.lock().await;
+            client
+                .connection_options
+                .set_forced_transport(Some(Transport::WsStreaming));
+        }
+
         Ok(Self {
             account_id: ws_info.account_id.clone(),
             market_streamer_client: Some(market_streamer_client),
             price_streamer_client: Some(price_streamer_client),
+            has_market_stream_subs: false,
+            has_price_stream_subs: false,
         })
     }
 
@@ -707,6 +728,9 @@ impl StreamerClient {
         epics: Vec<String>,
         fields: HashSet<StreamingMarketField>,
     ) -> Result<mpsc::UnboundedReceiver<PriceData>, AppError> {
+        // Mark that we have at least one subscription on the market streamer
+        self.has_market_stream_subs = true;
+
         let fields = get_streaming_market_fields(&fields);
         let market_epics: Vec<String> = epics
             .iter()
@@ -777,6 +801,9 @@ impl StreamerClient {
     pub async fn trade_subscribe(
         &mut self,
     ) -> Result<mpsc::UnboundedReceiver<TradeFields>, AppError> {
+        // Mark that we have at least one subscription on the market streamer
+        self.has_market_stream_subs = true;
+
         let account_id = self.account_id.clone();
         let fields = Some(vec![
             "CONFIRMS".to_string(),
@@ -852,6 +879,9 @@ impl StreamerClient {
         &mut self,
         fields: HashSet<StreamingAccountDataField>,
     ) -> Result<mpsc::UnboundedReceiver<AccountFields>, AppError> {
+        // Mark that we have at least one subscription on the market streamer
+        self.has_market_stream_subs = true;
+
         let fields = get_streaming_account_data_fields(&fields);
         let account_id = self.account_id.clone();
         let account_items = vec![format!("ACCOUNT:{account_id}")];
@@ -928,6 +958,9 @@ impl StreamerClient {
         epics: Vec<String>,
         fields: HashSet<StreamingPriceField>,
     ) -> Result<mpsc::UnboundedReceiver<PriceData>, AppError> {
+        // Mark that we have at least one subscription on the price streamer
+        self.has_price_stream_subs = true;
+
         let fields = get_streaming_price_fields(&fields);
         let account_id = self.account_id.clone();
         let price_epics: Vec<String> = epics
@@ -1004,26 +1037,38 @@ impl StreamerClient {
 
         let mut tasks = Vec::new();
 
-        // Connect market streamer if available
-        if let Some(client) = self.market_streamer_client.as_ref() {
-            let client = Arc::clone(client);
-            let signal = Arc::clone(&signal);
-            let task =
-                tokio::spawn(async move { Self::connect_client(client, signal, "Market").await });
-            tasks.push(task);
+        // Connect market streamer only if there are active subscriptions
+        if self.has_market_stream_subs {
+            if let Some(client) = self.market_streamer_client.as_ref() {
+                let client = Arc::clone(client);
+                let signal = Arc::clone(&signal);
+                let task =
+                    tokio::spawn(
+                        async move { Self::connect_client(client, signal, "Market").await },
+                    );
+                tasks.push(task);
+            }
+        } else {
+            info!("Skipping Market streamer connection: no active subscriptions");
         }
 
-        // Connect price streamer if available
-        if let Some(client) = self.price_streamer_client.as_ref() {
-            let client = Arc::clone(client);
-            let signal = Arc::clone(&signal);
-            let task =
-                tokio::spawn(async move { Self::connect_client(client, signal, "Price").await });
-            tasks.push(task);
+        // Connect price streamer only if there are active subscriptions
+        if self.has_price_stream_subs {
+            if let Some(client) = self.price_streamer_client.as_ref() {
+                let client = Arc::clone(client);
+                let signal = Arc::clone(&signal);
+                let task =
+                    tokio::spawn(
+                        async move { Self::connect_client(client, signal, "Price").await },
+                    );
+                tasks.push(task);
+            }
+        } else {
+            info!("Skipping Price streamer connection: no active subscriptions");
         }
 
         if tasks.is_empty() {
-            warn!("No streaming clients available to connect");
+            warn!("No streaming clients selected for connection (no active subscriptions)");
             return Ok(());
         }
 
@@ -1084,6 +1129,15 @@ impl StreamerClient {
                     break;
                 }
                 Err(error_msg) => {
+                    // If server closed because there are no active subscriptions, treat as graceful
+                    if error_msg.contains("No more requests to fulfill") {
+                        info!(
+                            "{} streamer closed gracefully: no active subscriptions (server reason: No more requests to fulfill)",
+                            client_type
+                        );
+                        return Ok(());
+                    }
+
                     error!("{} streamer connection failed: {}", client_type, error_msg);
 
                     if retry_counter < MAX_CONNECTION_ATTEMPTS - 1 {

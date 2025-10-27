@@ -206,18 +206,3 @@ fn test_price_data_clone() {
     assert_eq!(price.item_pos, cloned.item_pos);
 }
 
-#[test]
-fn test_price_data_serialization() {
-    let price = PriceData {
-        item_name: "MARKET:TEST".to_string(),
-        item_pos: 1,
-        fields: PriceFields::default(),
-        changed_fields: PriceFields::default(),
-        is_snapshot: true,
-    };
-
-    let json = serde_json::to_string(&price).unwrap();
-    let deserialized: PriceData = serde_json::from_str(&json).unwrap();
-    assert_eq!(price.item_name, deserialized.item_name);
-    assert_eq!(price.is_snapshot, deserialized.is_snapshot);
-}

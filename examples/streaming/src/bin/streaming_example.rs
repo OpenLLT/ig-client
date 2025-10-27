@@ -52,9 +52,7 @@ async fn main() -> Result<(), AppError> {
 
     // Set up the subscription (non-blocking)
     info!("Setting up market data subscription...");
-    let mut receiver = client
-        .market_subscribe(epics.clone(), fields)
-        .await?;
+    let mut receiver = client.market_subscribe(epics.clone(), fields).await?;
 
     // Spawn a task to handle incoming market data updates
     tokio::spawn(async move {
