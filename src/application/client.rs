@@ -658,10 +658,9 @@ impl StreamerClient {
             Some(&password),
         )?));
 
-        // Price data client (uses "Pricing" adapter)
         let price_streamer_client = Arc::new(Mutex::new(LightstreamerClient::new(
             Some(ws_info.server.as_str()),
-            Some("Pricing"),
+            None,
             Some(&ws_info.account_id),
             Some(&password),
         )?));
@@ -968,10 +967,18 @@ impl StreamerClient {
             .map(|epic| format!("PRICE:{account_id}:{epic}"))
             .collect();
 
+        // Debug what we are about to subscribe to (items and fields)
+        tracing::debug!("Pricing subscribe items: {:?}", price_epics);
+        tracing::debug!("Pricing subscribe fields: {:?}", fields);
+
         let mut subscription =
             Subscription::new(SubscriptionMode::Merge, Some(price_epics), Some(fields))?;
 
-        subscription.set_data_adapter(Some("Pricing".to_string()))?;
+        // Allow overriding the Pricing adapter name via env var to match server config
+        let pricing_adapter =
+            std::env::var("IG_PRICING_ADAPTER").unwrap_or_else(|_| "Pricing".to_string());
+        tracing::debug!("Using Pricing data adapter: {}", pricing_adapter);
+        subscription.set_data_adapter(Some(pricing_adapter))?;
         subscription.set_requested_snapshot(Some(Snapshot::Yes))?;
 
         // Create channel listener

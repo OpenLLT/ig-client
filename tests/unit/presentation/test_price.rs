@@ -205,4 +205,3 @@ fn test_price_data_clone() {
     assert_eq!(price.item_name, cloned.item_name);
     assert_eq!(price.item_pos, cloned.item_pos);
 }
-

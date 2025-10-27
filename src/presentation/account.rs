@@ -6,7 +6,6 @@ use lightstreamer_rs::subscription::ItemUpdate;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fmt;
 use std::ops::Add;
 
 /// Account information
@@ -215,7 +214,7 @@ pub enum ActionType {
 }
 
 /// Action associated with an activity
-#[derive(Debug, Clone, DisplaySimple, Deserialize, Serialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ActivityAction {
     /// Type of action
@@ -225,7 +224,7 @@ pub struct ActivityAction {
 }
 
 /// Individual position
-#[derive(Debug, Clone, DisplaySimple, Serialize, Deserialize)]
+#[derive(DebugPretty, Clone, DisplaySimple, Serialize, Deserialize)]
 pub struct Position {
     /// Details of the position
     pub position: PositionDetails,
@@ -256,7 +255,7 @@ impl Add for Position {
 }
 
 /// Details of a position
-#[derive(Debug, Clone, DisplaySimple, Deserialize, Serialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Deserialize, Serialize)]
 pub struct PositionDetails {
     /// Size of one contract
     #[serde(rename = "contractSize")]
@@ -338,7 +337,7 @@ impl Add for PositionDetails {
 }
 
 /// Market information for a position
-#[derive(Debug, Clone, DisplaySimple, Deserialize, Serialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Deserialize, Serialize)]
 pub struct PositionMarket {
     /// Human-readable name of the instrument
     #[serde(rename = "instrumentName")]
@@ -388,7 +387,7 @@ pub struct PositionMarket {
 }
 
 /// Working order
-#[derive(Debug, Clone, DisplaySimple, Deserialize, Serialize)]
+#[derive(DebugPretty, Clone, DisplaySimple, Deserialize, Serialize)]
 pub struct WorkingOrder {
     /// Details of the working order
     #[serde(rename = "workingOrderData")]
@@ -399,7 +398,7 @@ pub struct WorkingOrder {
 }
 
 /// Details of a working order
-#[derive(Debug, Clone, DisplaySimple, Deserialize, Serialize)]
+#[derive(DebugPretty, Clone, DisplaySimple, Deserialize, Serialize)]
 pub struct WorkingOrderData {
     /// Unique identifier for the deal
     #[serde(rename = "dealId")]
@@ -461,7 +460,7 @@ pub struct WorkingOrderData {
 }
 
 /// Market data for a working order
-#[derive(Debug, Clone, DisplaySimple, Deserialize, Serialize)]
+#[derive(DebugPretty, Clone, DisplaySimple, Deserialize, Serialize)]
 pub struct AccountMarketData {
     /// Human-readable name of the instrument
     #[serde(rename = "instrumentName")]
@@ -514,7 +513,7 @@ pub struct AccountMarketData {
 }
 
 /// Transaction metadata
-#[derive(Debug, Clone, DisplaySimple, Deserialize, Serialize)]
+#[derive(DebugPretty, Clone, DisplaySimple, Deserialize, Serialize)]
 pub struct TransactionMetadata {
     /// Pagination information
     #[serde(rename = "pageData")]
@@ -524,7 +523,7 @@ pub struct TransactionMetadata {
 }
 
 /// Pagination information
-#[derive(Debug, Clone, DisplaySimple, Deserialize, Serialize)]
+#[derive(DebugPretty, Clone, DisplaySimple, Deserialize, Serialize)]
 pub struct PageData {
     /// Current page number
     #[serde(rename = "pageNumber")]
@@ -538,7 +537,7 @@ pub struct PageData {
 }
 
 /// Individual transaction
-#[derive(Debug, Clone, DisplaySimple, Deserialize, Serialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Deserialize, Serialize)]
 pub struct AccountTransaction {
     /// Date and time of the transaction
     pub date: String,
@@ -577,7 +576,7 @@ pub struct AccountTransaction {
 }
 
 /// Representation of account data received from the IG Markets streaming API
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default)]
 pub struct AccountData {
     /// Name of the item this data belongs to
     pub item_name: String,
@@ -592,66 +591,66 @@ pub struct AccountData {
 }
 
 /// Fields containing account financial information
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default)]
 pub struct AccountFields {
     #[serde(rename = "PNL")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pnl: Option<f64>,
 
     #[serde(rename = "DEPOSIT")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     deposit: Option<f64>,
 
     #[serde(rename = "AVAILABLE_CASH")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     available_cash: Option<f64>,
 
     #[serde(rename = "PNL_LR")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pnl_lr: Option<f64>,
 
     #[serde(rename = "PNL_NLR")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pnl_nlr: Option<f64>,
 
     #[serde(rename = "FUNDS")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     funds: Option<f64>,
 
     #[serde(rename = "MARGIN")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     margin: Option<f64>,
 
     #[serde(rename = "MARGIN_LR")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     margin_lr: Option<f64>,
 
     #[serde(rename = "MARGIN_NLR")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     margin_nlr: Option<f64>,
 
     #[serde(rename = "AVAILABLE_TO_DEAL")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     available_to_deal: Option<f64>,
 
     #[serde(rename = "EQUITY")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     equity: Option<f64>,
 
     #[serde(rename = "EQUITY_USED")]
     #[serde(with = "string_as_float_opt")]
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     equity_used: Option<f64>,
 }
 
@@ -730,37 +729,6 @@ impl AccountData {
             equity: parse_float("EQUITY")?,
             equity_used: parse_float("EQUITY_USED")?,
         })
-    }
-}
-
-impl fmt::Display for AccountData {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "AccountData {{ item_name: {}, item_pos: {}, fields: {:?}, changed_fields: {:?}, is_snapshot: {} }}",
-            self.item_name, self.item_pos, self.fields, self.changed_fields, self.is_snapshot
-        )
-    }
-}
-
-impl fmt::Display for AccountFields {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "AccountFields {{ pnl: {:?}, deposit: {:?}, available_cash: {:?}, pnl_lr: {:?}, pnl_nlr: {:?}, funds: {:?}, margin: {:?}, margin_lr: {:?}, margin_nlr: {:?}, available_to_deal: {:?}, equity: {:?}, equity_used: {:?} }}",
-            self.pnl,
-            self.deposit,
-            self.available_cash,
-            self.pnl_lr,
-            self.pnl_nlr,
-            self.funds,
-            self.margin,
-            self.margin_lr,
-            self.margin_nlr,
-            self.available_to_deal,
-            self.equity,
-            self.equity_used
-        )
     }
 }
 

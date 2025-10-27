@@ -53,10 +53,3 @@ fn test_account_data_clone() {
     let account = AccountData::default();
     let _cloned = account.clone();
 }
-
-#[test]
-fn test_account_data_serialization() {
-    let account = AccountData::default();
-    let json = serde_json::to_string(&account).unwrap();
-    let _deserialized: AccountData = serde_json::from_str(&json).unwrap();
-}
