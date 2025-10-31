@@ -234,6 +234,100 @@ pub struct Position {
     pub pnl: Option<f64>,
 }
 
+impl Position {
+    /// Calculates the profit and loss (PnL) for the current position
+    /// of a trader.
+    ///
+    /// The method determines PnL based on whether it is already cached
+    /// (`self.pnl`) or needs to be calculated from the position and
+    /// market details.
+    ///
+    /// # Returns
+    ///
+    /// A floating-point value that represents the PnL for the position.
+    /// Positive values indicate a profit, and negative values indicate a loss.
+    ///
+    /// # Logic
+    ///
+    /// - If `self.pnl` is available, it directly returns the cached value.
+    /// - If not, the PnL is calculated based on the direction of the position:
+    ///   - For a Buy position:
+    ///     - The PnL is calculated as the difference between the `current_value`
+    ///       (based on the `market.bid` price or fallback value) and the original
+    ///       `value` (based on the position's size and level).
+    ///   - For a Sell position:
+    ///     - The PnL is calculated as the difference between the original
+    ///       `value` and the `current_value` (based on the `market.offer`
+    ///       price or fallback value).
+    ///
+    /// # Assumptions
+    /// - The `market.bid` and `market.offer` values are optional, so fallback
+    ///   to the original position value is used if they are unavailable.
+    /// - `self.position.direction` must be either `Direction::Buy` or
+    ///   `Direction::Sell`.
+    ///
+    pub fn pnl(&self) -> f64 {
+        if let Some(pnl) = self.pnl {
+            pnl
+        } else {
+            match self.position.direction {
+                Direction::Buy => {
+                    let value = self.position.size * self.position.level;
+                    let current_value = self.position.size * self.market.bid.unwrap_or(value);
+                    current_value - value
+                }
+                Direction::Sell => {
+                    let value = self.position.size * self.position.level;
+                    let current_value = self.position.size * self.market.offer.unwrap_or(value);
+                    value - current_value
+                }
+            }
+        }
+    }
+
+    /// Updates the profit and loss (PnL) for the current position in the market.
+    ///
+    /// The method calculates the PnL based on the position's direction (Buy or Sell),
+    /// size, level (entry price), and the current bid or offer price from the market data.
+    /// The result is stored in the `pnl` field.
+    ///
+    /// # Calculation:
+    /// - If the position is a Buy:
+    ///     - Calculate the initial value of the position as `size * level`.
+    ///     - Calculate the current value of the position using the current `bid` price from the market,
+    ///       or use the initial value if the `bid` price is not available.
+    ///     - PnL is the difference between the current value and the initial value.
+    /// - If the position is a Sell:
+    ///     - Calculate the initial value of the position as `size * level`.
+    ///     - Calculate the current value of the position using the current `offer` price from the market,
+    ///       or use the initial value if the `offer` price is not available.
+    ///     - PnL is the difference between the initial value and the current value.
+    ///
+    /// # Fields Updated:
+    /// - `self.pnl`: The calculated profit or loss is updated in this field. If no valid market price
+    ///   (bid/offer) is available, `pnl` will be calculated based on the initial value.
+    ///
+    /// # Panics:
+    /// This function does not explicitly panic but relies on the `unwrap_or` method to handle cases
+    /// where the `bid` or `offer` is unavailable. It assumes that the market or position data are initialized correctly.
+    ///
+    pub fn update_pnl(&mut self) {
+        let pnl = match self.position.direction {
+            Direction::Buy => {
+                let value = self.position.size * self.position.level;
+                let current_value = self.position.size * self.market.bid.unwrap_or(value);
+                current_value - value
+            }
+            Direction::Sell => {
+                let value = self.position.size * self.position.level;
+                let current_value = self.position.size * self.market.offer.unwrap_or(value);
+                value - current_value
+            }
+        };
+        self.pnl = Some(pnl);
+    }
+}
+
 impl Add for Position {
     type Output = Position;
 
@@ -735,5 +829,125 @@ impl AccountData {
 impl From<&ItemUpdate> for AccountData {
     fn from(item_update: &ItemUpdate) -> Self {
         Self::from_item_update(item_update).unwrap_or_else(|_| AccountData::default())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::presentation::order::Direction;
+
+    fn sample_position_details(direction: Direction, level: f64, size: f64) -> PositionDetails {
+        PositionDetails {
+            contract_size: 1.0,
+            created_date: "2025/10/30 18:13:53:000".to_string(),
+            created_date_utc: "2025-10-30T17:13:53".to_string(),
+            deal_id: "DIAAAAVJNQPWZAG".to_string(),
+            deal_reference: "RZ0RQ1K8V1S1JN2".to_string(),
+            direction,
+            limit_level: None,
+            level,
+            size,
+            stop_level: None,
+            trailing_step: None,
+            trailing_stop_distance: None,
+            currency: "USD".to_string(),
+            controlled_risk: false,
+            limited_risk_premium: None,
+        }
+    }
+
+    fn sample_market(bid: Option<f64>, offer: Option<f64>) -> PositionMarket {
+        PositionMarket {
+            instrument_name: "US 500 6910 PUT ($1)".to_string(),
+            expiry: "DEC-25".to_string(),
+            epic: "OP.D.OTCSPX3.6910P.IP".to_string(),
+            instrument_type: "UNKNOWN".to_string(),
+            lot_size: 1.0,
+            high: Some(153.43),
+            low: Some(147.42),
+            percentage_change: 0.61,
+            net_change: 6895.38,
+            bid,
+            offer,
+            update_time: "05:55:59".to_string(),
+            update_time_utc: "05:55:59".to_string(),
+            delay_time: 0,
+            streaming_prices_available: true,
+            market_status: "TRADEABLE".to_string(),
+            scaling_factor: 1,
+        }
+    }
+
+    #[test]
+    fn pnl_sell_uses_offer_and_matches_sample_data() {
+        // Given the provided sample data (SELL):
+        // size = 1.0, level = 155.14, offer = 152.82
+        // value = 155.14, current_value = 152.82 => pnl = 155.14 - 152.82 = 2.32
+        let details = sample_position_details(Direction::Sell, 155.14, 1.0);
+        let market = sample_market(Some(151.32), Some(152.82));
+        let position = Position {
+            position: details,
+            market,
+            pnl: None,
+        };
+
+        let pnl = position.pnl();
+        assert!((pnl - 2.32).abs() < 1e-9, "expected 2.32, got {}", pnl);
+    }
+
+    #[test]
+    fn pnl_buy_uses_bid_and_computes_difference() {
+        // For BUY: pnl = current_value - value
+        // Using size = 1.0, level = 155.14, bid = 151.32 => pnl = 151.32 - 155.14 = -3.82
+        let details = sample_position_details(Direction::Buy, 155.14, 1.0);
+        let market = sample_market(Some(151.32), Some(152.82));
+        let position = Position {
+            position: details,
+            market,
+            pnl: None,
+        };
+
+        let pnl = position.pnl();
+        assert!((pnl + 3.82).abs() < 1e-9, "expected -3.82, got {}", pnl);
+    }
+
+    #[test]
+    fn pnl_field_overrides_calculation_when_present() {
+        let details = sample_position_details(Direction::Sell, 155.14, 1.0);
+        let market = sample_market(Some(151.32), Some(152.82));
+        // Set explicit pnl different from calculated (which would be 2.32)
+        let position = Position {
+            position: details,
+            market,
+            pnl: Some(10.0),
+        };
+        assert_eq!(position.pnl(), 10.0);
+    }
+
+    #[test]
+    fn pnl_sell_is_zero_when_offer_missing() {
+        // When offer is missing for SELL, unwrap_or(value) makes current_value == value => pnl = 0
+        let details = sample_position_details(Direction::Sell, 155.14, 1.0);
+        let market = sample_market(Some(151.32), None);
+        let position = Position {
+            position: details,
+            market,
+            pnl: None,
+        };
+        assert!((position.pnl() - 0.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn pnl_buy_is_zero_when_bid_missing() {
+        // When bid is missing for BUY, unwrap_or(value) makes current_value == value => pnl = 0
+        let details = sample_position_details(Direction::Buy, 155.14, 1.0);
+        let market = sample_market(None, Some(152.82));
+        let position = Position {
+            position: details,
+            market,
+            pnl: None,
+        };
+        assert!((position.pnl() - 0.0).abs() < 1e-12);
     }
 }
