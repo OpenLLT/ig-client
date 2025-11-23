@@ -328,6 +328,39 @@ impl Position {
     }
 }
 
+impl Position {
+    /// Checks if the current financial instrument is a call option.
+    ///
+    /// A call option is a financial derivative that gives the holder the right (but not the obligation)
+    /// to buy an underlying asset at a specified price within a specified time period. This method checks
+    /// whether the instrument represented by this instance is a call option by inspecting the `instrument_name`
+    /// field.
+    ///
+    /// # Returns
+    ///
+    /// * `true` if the instrument's name contains the substring `"CALL"`, indicating it is a call option.
+    /// * `false` otherwise.
+    ///
+    pub fn is_call(&self) -> bool {
+        self.market.instrument_name.contains("CALL")
+    }
+
+    /// Checks if the financial instrument is a "PUT" option.
+    ///
+    /// This method examines the `instrument_name` field of the struct to determine
+    /// if it contains the substring "PUT". If the substring is found, the method
+    /// returns `true`, indicating that the instrument is categorized as a "PUT" option.
+    /// Otherwise, it returns `false`.
+    ///
+    /// # Returns
+    /// * `true` - If `instrument_name` contains the substring "PUT".
+    /// * `false` - If `instrument_name` does not contain the substring "PUT".
+    ///
+    pub fn is_put(&self) -> bool {
+        self.market.instrument_name.contains("PUT")
+    }
+}
+
 impl Add for Position {
     type Output = Position;
 
