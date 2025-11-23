@@ -332,7 +332,6 @@ impl Auth {
         });
 
         debug!("Sending OAuth login request to: {}", url);
-
         let headers = vec![
             ("X-IG-API-KEY", self.config.credentials.api_key.as_str()),
             ("Content-Type", "application/json"),
@@ -351,7 +350,11 @@ impl Auth {
         .await?;
 
         let response: SessionResponse = response.json().await?;
-        let session = response.get_session();
+        let mut session = response.get_session();
+        if session.account_id != self.config.credentials.account_id {
+            session.account_id = self.config.credentials.account_id.clone();
+        };
+
         assert!(session.is_oauth());
 
         Ok(session)
