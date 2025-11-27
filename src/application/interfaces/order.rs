@@ -28,6 +28,14 @@ pub trait OrderService: Send + Sync {
         deal_reference: &str,
     ) -> Result<OrderConfirmationResponse, AppError>;
 
+    /// Gets the confirmation of an order with retry logic
+    async fn get_order_confirmation_w_retry(
+        &self,
+        deal_reference: &str,
+        retries: u64,
+        delay_ms: u64,
+    ) -> Result<OrderConfirmationResponse, AppError>;
+
     /// Updates an existing position
     async fn update_position(
         &self,

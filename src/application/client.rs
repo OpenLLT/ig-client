@@ -39,7 +39,9 @@ use lightstreamer_rs::utils::setup_signal_hook;
 use serde_json::Value;
 use std::collections::HashSet;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::sync::{Mutex, Notify, RwLock, mpsc};
+use tokio::time::sleep;
 use tracing::{debug, error, info, warn};
 
 const MAX_CONNECTION_ATTEMPTS: u64 = 3;
@@ -555,6 +557,31 @@ impl OrderService for Client {
         let result: OrderConfirmationResponse = self.http_client.get(&path, Some(1)).await?;
         debug!("Confirmation obtained for order: {}", deal_reference);
         Ok(result)
+    }
+
+    async fn get_order_confirmation_w_retry(
+        &self,
+        deal_reference: &str,
+        retries: u64,
+        delay_ms: u64,
+    ) -> Result<OrderConfirmationResponse, AppError> {
+        let mut attempts = 0;
+        loop {
+            match self.get_order_confirmation(deal_reference).await {
+                Ok(response) => return Ok(response),
+                Err(e) => {
+                    attempts += 1;
+                    if attempts > retries {
+                        return Err(e);
+                    }
+                    warn!(
+                        "Failed to get order confirmation (attempt {}/{}): {}. Retrying in {} ms...",
+                        attempts, retries, e, delay_ms
+                    );
+                    sleep(Duration::from_millis(delay_ms)).await;
+                }
+            }
+        }
     }
 
     async fn update_position(
