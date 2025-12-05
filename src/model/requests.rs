@@ -6,6 +6,7 @@
 use crate::constants::{DEFAULT_ORDER_BUY_LEVEL, DEFAULT_ORDER_SELL_LEVEL};
 use crate::prelude::{Deserialize, Serialize, WorkingOrder};
 use crate::presentation::order::{Direction, OrderType, TimeInForce};
+use chrono::{Duration, Utc};
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use std::fmt;
 use std::fmt::{Debug, Display};
@@ -813,10 +814,69 @@ impl CreateWorkingOrderRequest {
         self
     }
 
-    /// Sets the order to expire at a specific date
+    /// Sets the expiration date for an order and updates the time-in-force policy.
+    ///
+    /// This method updates the `time_in_force` property to `GoodTillDate` and assigns
+    /// the provided expiration date to the `good_till_date` property. It allows chaining
+    /// as it consumes the current instance and returns it after modification.
+    ///
+    /// # Arguments
+    /// * `date` - A `String` representing the expiration date for the order.
+    ///
+    /// # Returns
+    /// * `Self` - The updated instance of the type, allowing method chaining.
+    ///
+    /// In the example above, the expiration date for the order is set to
+    /// "2023-12-31T23:59:59Z" and the `time_in_force` policy is set to `GoodTillDate`.
     pub fn expires_at(mut self, date: String) -> Self {
         self.time_in_force = TimeInForce::GoodTillDate;
         self.good_till_date = Some(date);
+        self
+    }
+
+    ///
+    /// Sets the order to expire by the end of the next day (tomorrow).
+    ///
+    /// This method modifies the `time_in_force` field to `GoodTillDate` and calculates
+    /// the expiration date as tomorrow's date and time. The calculated date is then
+    /// formatted as a string in the format `YYYY/MM/DD HH:MM:SS` and assigned to
+    /// the `good_till_date` field.
+    ///
+    /// # Returns
+    /// Returns the updated instance of the struct with the expiration date set to tomorrow.
+    ///
+    /// In this example, the `expires_tomorrow` method sets the order to expire at the
+    /// same time on the next calendar day.
+    ///
+    /// Note: The function uses the UTC timezone for calculating the date and time.
+    ///
+    pub fn expires_tomorrow(mut self) -> Self {
+        self.time_in_force = TimeInForce::GoodTillDate;
+        let tomorrow = Utc::now() + Duration::days(1);
+        self.good_till_date = Some(tomorrow.format("%Y/%m/%d %H:%M:%S").to_string());
+        self
+    }
+
+    /// Sets the expiration time for an order and configures it to expire at a specific date and time.
+    ///
+    /// This method modifies the `time_in_force` for the order to `GoodTillDate`
+    /// and calculates the expiration time by adding the provided `duration` to
+    /// the current UTC time. The calculated expiration time is formatted as
+    /// "YYYY/MM/DD HH:MM:SS" and stored in the `good_till_date` field.
+    ///
+    /// # Parameters
+    /// - `duration`: A `Duration` instance that represents the amount of time
+    ///   after the current UTC time when the order should expire.
+    ///
+    /// # Returns
+    /// Returns `Self` with updated `time_in_force` and `good_till_date`.
+    ///
+    /// Note: This method assumes that the runtime uses the `chrono` crate for
+    /// time handling and formatting.
+    pub fn expires_in(mut self, duration: Duration) -> Self {
+        self.time_in_force = TimeInForce::GoodTillDate;
+        let tomorrow = Utc::now() + duration;
+        self.good_till_date = Some(tomorrow.format("%Y/%m/%d %H:%M:%S").to_string());
         self
     }
 }

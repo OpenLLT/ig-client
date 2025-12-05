@@ -29,7 +29,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         epic_info.snapshot.low.unwrap(),
         currency,
         epic_info.instrument.expiry,
-    );
+    )
+    .expires_tomorrow();
 
     info!("Creating working order: {:?}", order_request);
     let create_response = client.create_working_order(&order_request).await?;
