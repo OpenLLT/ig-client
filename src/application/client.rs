@@ -21,12 +21,14 @@ use crate::model::responses::{
     MultipleMarketDetailsResponse,
 };
 use crate::model::streaming::{
-    StreamingAccountDataField, StreamingMarketField, StreamingPriceField,
-    get_streaming_account_data_fields, get_streaming_market_fields, get_streaming_price_fields,
+    StreamingAccountDataField, StreamingChartField, StreamingMarketField, StreamingPriceField,
+    get_streaming_account_data_fields, get_streaming_chart_fields, get_streaming_market_fields,
+    get_streaming_price_fields,
 };
 use crate::prelude::{
-    AccountActivityResponse, AccountFields, AccountsResponse, OrderConfirmationResponse,
-    PositionsResponse, TradeFields, TransactionHistoryResponse, WorkingOrdersResponse,
+    AccountActivityResponse, AccountFields, AccountsResponse, ChartData, ChartScale,
+    OrderConfirmationResponse, PositionsResponse, TradeFields, TransactionHistoryResponse,
+    WorkingOrdersResponse,
 };
 use crate::presentation::market::{MarketData, MarketDetails};
 use crate::presentation::price::PriceData;
@@ -1041,6 +1043,102 @@ impl StreamerClient {
             account_id
         );
         Ok(price_rx)
+    }
+
+    /// Subscribes to chart data updates for the specified instruments and scale.
+    ///
+    /// This method creates a subscription to receive real-time chart updates including
+    /// OHLC data, volume, and other chart metrics for the given EPICs and chart scale,
+    /// and returns a channel receiver for consuming the updates.
+    ///
+    /// # Arguments
+    ///
+    /// * `epics` - List of instrument EPICs to subscribe to.
+    /// * `scale` - Chart scale (e.g., Tick, 1Min, 5Min, etc.).
+    /// * `fields` - Set of chart data fields to receive (e.g., OPEN, HIGH, LOW, CLOSE, VOLUME).
+    ///
+    /// # Returns
+    ///
+    /// Returns a receiver channel for `ChartData` updates, or an error if
+    /// the subscription setup failed.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let mut receiver = client.chart_subscribe(
+    ///     vec!["IX.D.DAX.DAILY.IP".to_string()],
+    ///     ChartScale::OneMin,
+    ///     fields
+    /// ).await?;
+    ///
+    /// tokio::spawn(async move {
+    ///     while let Some(chart_data) = receiver.recv().await {
+    ///         println!("Chart update: {:?}", chart_data);
+    ///     }
+    /// });
+    /// ```
+    pub async fn chart_subscribe(
+        &mut self,
+        epics: Vec<String>,
+        scale: ChartScale,
+        fields: HashSet<StreamingChartField>,
+    ) -> Result<mpsc::UnboundedReceiver<ChartData>, AppError> {
+        // Mark that we have at least one subscription on the market streamer
+        self.has_market_stream_subs = true;
+
+        let fields = get_streaming_chart_fields(&fields);
+
+        let chart_items: Vec<String> = epics
+            .iter()
+            .map(|epic| format!("CHART:{epic}:{scale}",))
+            .collect();
+
+        // Candle data uses MERGE mode, tick data uses DISTINCT
+        let mode = if matches!(scale, ChartScale::Tick) {
+            SubscriptionMode::Distinct
+        } else {
+            SubscriptionMode::Merge
+        };
+
+        let mut subscription = Subscription::new(mode, Some(chart_items), Some(fields))?;
+
+        subscription.set_data_adapter(None)?;
+        subscription.set_requested_snapshot(Some(Snapshot::Yes))?;
+
+        // Create channel listener
+        let (listener, item_receiver) = ChannelSubscriptionListener::create_channel();
+        subscription.add_listener(Box::new(listener));
+
+        // Configure client and add subscription (reusing market_streamer_client)
+        let client = self.market_streamer_client.as_ref().ok_or_else(|| {
+            AppError::WebSocketError("market streamer client not initialized".to_string())
+        })?;
+
+        {
+            let mut client = client.lock().await;
+            client
+                .connection_options
+                .set_forced_transport(Some(Transport::WsStreaming));
+            LightstreamerClient::subscribe(client.subscription_sender.clone(), subscription).await;
+        }
+
+        // Create a channel for ChartData and spawn a task to convert ItemUpdate to ChartData
+        let (chart_tx, chart_rx) = mpsc::unbounded_channel();
+        tokio::spawn(async move {
+            let mut receiver = item_receiver;
+            while let Some(item_update) = receiver.recv().await {
+                let chart_data = ChartData::from(&item_update);
+                let _ = chart_tx.send(chart_data);
+            }
+        });
+
+        info!(
+            "Chart subscription created for {} instruments (scale: {})",
+            epics.len(),
+            scale
+        );
+
+        Ok(chart_rx)
     }
 
     /// Connects all active Lightstreamer clients and maintains the connections.

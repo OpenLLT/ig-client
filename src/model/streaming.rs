@@ -600,3 +600,134 @@ pub(crate) fn get_streaming_account_data_fields(
     }
     fields_vec
 }
+
+/// Streaming chart fields available for chart subscriptions (tick and candle).
+///
+/// These fields represent both tick-level and aggregated (candle) chart data
+/// provided by the IG Markets Lightstreamer streaming API.
+#[derive(Clone, Deserialize, Serialize, PartialEq, Eq, Default, Hash)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum StreamingChartField {
+    // Common fields (available in both tick and candle data)
+    /// Last traded volume for the period (tick or candle)
+    #[default]
+    Ltv,
+    /// Incremental trading volume since last update
+    Ttv,
+    /// Update time as milliseconds from the Epoch
+    Utm,
+    /// Mid-market price at the start of the day
+    DayOpenMid,
+    /// Change from day's opening mid price to current mid price
+    DayNetChgMid,
+    /// Daily percentage change in mid price
+    DayPercChgMid,
+    /// Highest mid price for the day
+    DayHigh,
+    /// Lowest mid price for the day
+    DayLow,
+
+    // Tick-only fields (DISTINCT mode, CHART:{epic}:TICK)
+    /// Current bid price
+    Bid,
+    /// Current offer/ask price
+    Ofr,
+    /// Last traded price
+    Ltp,
+
+    // Candle-only fields (MERGE mode, CHART:{epic}:{scale})
+    /// Candle open price (offer)
+    OfrOpen,
+    /// Candle high price (offer)
+    OfrHigh,
+    /// Candle low price (offer)
+    OfrLow,
+    /// Candle closing price (offer)
+    OfrClose,
+    /// Candle open price (bid)
+    BidOpen,
+    /// Candle high price (bid)
+    BidHigh,
+    /// Candle low price (bid)
+    BidLow,
+    /// Candle closing price (bid)
+    BidClose,
+    /// Candle open price (last traded price)
+    LtpOpen,
+    /// Candle high price (last traded price)
+    LtpHigh,
+    /// Candle low price (last traded price)
+    LtpLow,
+    /// Candle closing price (last traded price)
+    LtpClose,
+    /// Indicator that candle ended (1 when candle ends, 0 otherwise)
+    ConsEnd,
+    /// Number of ticks consolidated in the candle
+    ConsTickCount,
+}
+
+impl std::fmt::Debug for StreamingChartField {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let name = match self {
+            StreamingChartField::Ltv => "LTV",
+            StreamingChartField::Ttv => "TTV",
+            StreamingChartField::Utm => "UTM",
+            StreamingChartField::DayOpenMid => "DAY_OPEN_MID",
+            StreamingChartField::DayNetChgMid => "DAY_NET_CHG_MID",
+            StreamingChartField::DayPercChgMid => "DAY_PERC_CHG_MID",
+            StreamingChartField::DayHigh => "DAY_HIGH",
+            StreamingChartField::DayLow => "DAY_LOW",
+
+            StreamingChartField::Bid => "BID",
+            StreamingChartField::Ofr => "OFR",
+            StreamingChartField::Ltp => "LTP",
+
+            StreamingChartField::OfrOpen => "OFR_OPEN",
+            StreamingChartField::OfrHigh => "OFR_HIGH",
+            StreamingChartField::OfrLow => "OFR_LOW",
+            StreamingChartField::OfrClose => "OFR_CLOSE",
+            StreamingChartField::BidOpen => "BID_OPEN",
+            StreamingChartField::BidHigh => "BID_HIGH",
+            StreamingChartField::BidLow => "BID_LOW",
+            StreamingChartField::BidClose => "BID_CLOSE",
+            StreamingChartField::LtpOpen => "LTP_OPEN",
+            StreamingChartField::LtpHigh => "LTP_HIGH",
+            StreamingChartField::LtpLow => "LTP_LOW",
+            StreamingChartField::LtpClose => "LTP_CLOSE",
+            StreamingChartField::ConsEnd => "CONS_END",
+            StreamingChartField::ConsTickCount => "CONS_TICK_COUNT",
+        };
+        write!(f, "{}", name)
+    }
+}
+
+impl std::fmt::Display for StreamingChartField {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+/// Constructs a vector of serialized streaming chart field names from a given set of `StreamingChartField`.
+///
+/// # Arguments
+///
+/// * `fields` - A reference to a `HashSet` containing `StreamingChartField` items.
+///
+/// # Returns
+///
+/// A `Vec<String>` of serialized field names for Lightstreamer subscriptions.
+///
+/// # Panics
+///
+/// Panics if serialization of any field fails.
+pub(crate) fn get_streaming_chart_fields(fields: &HashSet<StreamingChartField>) -> Vec<String> {
+    let mut out = Vec::with_capacity(fields.len());
+    for field in fields {
+        let val = serde_json::to_value(field).expect("Failed to serialize StreamingChartField");
+        match val {
+            serde_json::Value::String(s) => out.push(s),
+            _ => out.push(format!("{:?}", field)),
+        }
+    }
+    out
+}

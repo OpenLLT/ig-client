@@ -7,7 +7,7 @@
 //! Tests for streaming model enums, specifically focusing on Display and Debug implementations.
 
 use ig_client::model::streaming::{
-    StreamingAccountDataField, StreamingMarketField, StreamingPriceField,
+    StreamingAccountDataField, StreamingChartField, StreamingMarketField, StreamingPriceField,
 };
 use std::collections::HashSet;
 
@@ -478,4 +478,186 @@ fn test_streaming_market_field_clone_and_equality() {
     assert_ne!(original, different);
     assert_ne!(format!("{:?}", original), format!("{:?}", different));
     assert_ne!(format!("{}", original), format!("{}", different));
+}
+
+#[test]
+fn test_streaming_chart_field_debug_format() {
+    let fields = [
+        StreamingChartField::Ltv,
+        StreamingChartField::Ttv,
+        StreamingChartField::Utm,
+        StreamingChartField::DayOpenMid,
+        StreamingChartField::DayNetChgMid,
+        StreamingChartField::DayPercChgMid,
+        StreamingChartField::DayHigh,
+        StreamingChartField::DayLow,
+        StreamingChartField::Bid,
+        StreamingChartField::Ofr,
+        StreamingChartField::Ltp,
+        StreamingChartField::OfrOpen,
+        StreamingChartField::OfrHigh,
+        StreamingChartField::OfrLow,
+        StreamingChartField::OfrClose,
+        StreamingChartField::BidOpen,
+        StreamingChartField::BidHigh,
+        StreamingChartField::BidLow,
+        StreamingChartField::BidClose,
+        StreamingChartField::LtpOpen,
+        StreamingChartField::LtpHigh,
+        StreamingChartField::LtpLow,
+        StreamingChartField::LtpClose,
+        StreamingChartField::ConsEnd,
+        StreamingChartField::ConsTickCount,
+    ];
+
+    let expected_debug = vec![
+        "LTV",
+        "TTV",
+        "UTM",
+        "DAY_OPEN_MID",
+        "DAY_NET_CHG_MID",
+        "DAY_PERC_CHG_MID",
+        "DAY_HIGH",
+        "DAY_LOW",
+        "BID",
+        "OFR",
+        "LTP",
+        "OFR_OPEN",
+        "OFR_HIGH",
+        "OFR_LOW",
+        "OFR_CLOSE",
+        "BID_OPEN",
+        "BID_HIGH",
+        "BID_LOW",
+        "BID_CLOSE",
+        "LTP_OPEN",
+        "LTP_HIGH",
+        "LTP_LOW",
+        "LTP_CLOSE",
+        "CONS_END",
+        "CONS_TICK_COUNT",
+    ];
+
+    for (field, expected) in fields.iter().zip(expected_debug.iter()) {
+        assert_eq!(format!("{:?}", field), *expected);
+    }
+}
+
+#[test]
+fn test_streaming_chart_field_display_format() {
+    let fields = [
+        StreamingChartField::Ltv,
+        StreamingChartField::Ttv,
+        StreamingChartField::Utm,
+        StreamingChartField::DayOpenMid,
+        StreamingChartField::DayNetChgMid,
+        StreamingChartField::DayPercChgMid,
+        StreamingChartField::DayHigh,
+        StreamingChartField::DayLow,
+        StreamingChartField::Bid,
+        StreamingChartField::Ofr,
+        StreamingChartField::Ltp,
+        StreamingChartField::OfrOpen,
+        StreamingChartField::OfrHigh,
+        StreamingChartField::OfrLow,
+        StreamingChartField::OfrClose,
+        StreamingChartField::BidOpen,
+        StreamingChartField::BidHigh,
+        StreamingChartField::BidLow,
+        StreamingChartField::BidClose,
+        StreamingChartField::LtpOpen,
+        StreamingChartField::LtpHigh,
+        StreamingChartField::LtpLow,
+        StreamingChartField::LtpClose,
+        StreamingChartField::ConsEnd,
+        StreamingChartField::ConsTickCount,
+    ];
+
+    let expected_display = vec![
+        "LTV",
+        "TTV",
+        "UTM",
+        "DAY_OPEN_MID",
+        "DAY_NET_CHG_MID",
+        "DAY_PERC_CHG_MID",
+        "DAY_HIGH",
+        "DAY_LOW",
+        "BID",
+        "OFR",
+        "LTP",
+        "OFR_OPEN",
+        "OFR_HIGH",
+        "OFR_LOW",
+        "OFR_CLOSE",
+        "BID_OPEN",
+        "BID_HIGH",
+        "BID_LOW",
+        "BID_CLOSE",
+        "LTP_OPEN",
+        "LTP_HIGH",
+        "LTP_LOW",
+        "LTP_CLOSE",
+        "CONS_END",
+        "CONS_TICK_COUNT",
+    ];
+
+    for (field, expected) in fields.iter().zip(expected_display.iter()) {
+        assert_eq!(format!("{}", field), *expected);
+    }
+}
+
+#[test]
+fn test_streaming_chart_field_debug_display_consistency() {
+    let fields = vec![
+        StreamingChartField::Ltv,
+        StreamingChartField::Ttv,
+        StreamingChartField::Utm,
+        StreamingChartField::Bid,
+        StreamingChartField::Ofr,
+        StreamingChartField::Ltp,
+        StreamingChartField::OfrOpen,
+        StreamingChartField::BidClose,
+        StreamingChartField::ConsEnd,
+    ];
+
+    for field in fields {
+        assert_eq!(format!("{:?}", field), format!("{}", field));
+    }
+}
+
+#[test]
+fn test_streaming_chart_field_default() {
+    let default_field = StreamingChartField::default();
+    assert_eq!(default_field, StreamingChartField::Ltv);
+    assert_eq!(format!("{:?}", default_field), "LTV");
+    assert_eq!(format!("{}", default_field), "LTV");
+}
+
+#[test]
+fn test_streaming_chart_field_serialization_format() {
+    let field = StreamingChartField::DayHigh;
+    let serialized = serde_json::to_string(&field).unwrap();
+    assert_eq!(serialized, "\"DAY_HIGH\"");
+    assert_eq!(format!("{:?}", field), "DAY_HIGH");
+}
+
+#[test]
+fn test_streaming_chart_field_clone_and_equality() {
+    let original = StreamingChartField::OfrClose;
+    let cloned = original.clone();
+    assert_eq!(original, cloned);
+    assert_eq!(format!("{:?}", original), format!("{:?}", cloned));
+}
+
+#[test]
+fn test_streaming_chart_field_in_hashset() {
+    let mut set = HashSet::new();
+    set.insert(StreamingChartField::Bid);
+    set.insert(StreamingChartField::Ofr);
+    set.insert(StreamingChartField::Bid); // duplicate
+
+    assert_eq!(set.len(), 2);
+    assert!(set.contains(&StreamingChartField::Bid));
+    assert!(set.contains(&StreamingChartField::Ofr));
+    assert!(!set.contains(&StreamingChartField::Ltp));
 }

@@ -2,10 +2,10 @@ use crate::presentation::serialization::string_as_float_opt;
 use lightstreamer_rs::subscription::ItemUpdate;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt};
 
 /// Time scale for chart data aggregation
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[derive(Clone, Serialize, Deserialize, PartialEq, Default)]
 pub enum ChartScale {
     /// Second-level aggregation
     #[serde(rename = "SECOND")]
@@ -23,6 +23,25 @@ pub enum ChartScale {
     #[serde(rename = "TICK")]
     #[default]
     Tick,
+}
+
+impl fmt::Debug for ChartScale {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            ChartScale::Second => "SECOND",
+            ChartScale::OneMinute => "1MINUTE",
+            ChartScale::FiveMinute => "5MINUTE",
+            ChartScale::Hour => "HOUR",
+            ChartScale::Tick => "TICK",
+        };
+        write!(f, "{}", s)
+    }
+}
+
+impl fmt::Display for ChartScale {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default)]
