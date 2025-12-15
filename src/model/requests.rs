@@ -520,24 +520,40 @@ impl CreateOrderRequest {
     }
 }
 
-/// Model for updating an existing position
-#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
+/// Model for updating an existing position (PUT /positions/otc/{dealId})
+///
+/// # Constraints
+/// - If `guaranteed_stop` is `true`, then `stop_level` must be set
+/// - If `guaranteed_stop` is `true`, then `trailing_stop` must be `false`
+/// - If `trailing_stop` is `false`, then DO NOT set `trailing_stop_distance` or `trailing_stop_increment`
+/// - If `trailing_stop` is `true`, then `guaranteed_stop` must be `false`
+/// - If `trailing_stop` is `true`, then `trailing_stop_distance`, `trailing_stop_increment`, and `stop_level` must be set
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default)]
 pub struct UpdatePositionRequest {
-    /// New price level for stop loss
-    #[serde(rename = "stopLevel", skip_serializing_if = "Option::is_none")]
-    pub stop_level: Option<f64>,
+    /// True if a guaranteed stop is required
+    #[serde(rename = "guaranteedStop", skip_serializing_if = "Option::is_none")]
+    pub guaranteed_stop: Option<bool>,
     /// New price level for take profit
     #[serde(rename = "limitLevel", skip_serializing_if = "Option::is_none")]
     pub limit_level: Option<f64>,
-    /// Whether to enable trailing stop
+    /// New price level for stop loss
+    #[serde(rename = "stopLevel", skip_serializing_if = "Option::is_none")]
+    pub stop_level: Option<f64>,
+    /// True if trailing stop is required
     #[serde(rename = "trailingStop", skip_serializing_if = "Option::is_none")]
     pub trailing_stop: Option<bool>,
-    /// Distance for trailing stop
+    /// Distance for trailing stop in points
     #[serde(
         rename = "trailingStopDistance",
         skip_serializing_if = "Option::is_none"
     )]
     pub trailing_stop_distance: Option<f64>,
+    /// Trailing stop step increment in points
+    #[serde(
+        rename = "trailingStopIncrement",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub trailing_stop_increment: Option<f64>,
 }
 
 /// Model for closing an existing position

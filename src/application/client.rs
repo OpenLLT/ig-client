@@ -601,6 +601,31 @@ impl OrderService for Client {
         Ok(result)
     }
 
+    async fn update_level_in_position(
+        &self,
+        deal_id: &str,
+        limit_level: Option<f64>,
+    ) -> Result<UpdatePositionResponse, AppError> {
+        let path = format!("positions/otc/{}", deal_id);
+        info!("Updating position: {}", deal_id);
+        let limit_level = limit_level.unwrap_or(0.0);
+
+        let update: UpdatePositionRequest = UpdatePositionRequest {
+            guaranteed_stop: None,
+            limit_level: Some(limit_level),
+            stop_level: None,
+            trailing_stop: None,
+            trailing_stop_distance: None,
+            trailing_stop_increment: None,
+        };
+        let result: UpdatePositionResponse = self.http_client.put(&path, update, Some(2)).await?;
+        debug!(
+            "Position updated: {} with deal reference: {}",
+            deal_id, result.deal_reference
+        );
+        Ok(result)
+    }
+
     async fn close_position(
         &self,
         close_request: &ClosePositionRequest,

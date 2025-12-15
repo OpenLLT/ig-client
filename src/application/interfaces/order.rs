@@ -43,6 +43,37 @@ pub trait OrderService: Send + Sync {
         update: &UpdatePositionRequest,
     ) -> Result<UpdatePositionResponse, AppError>;
 
+    ///  Asynchronously updates the limit level of a position in a specified deal.
+    ///  
+    ///  # Parameters
+    ///  - `deal_id`: A reference to a string slice representing the unique identifier of the deal
+    ///    whose position is to be updated.
+    ///  - `limit_level`: An optional `f64` value specifying the new limit level for the position.
+    ///    If `None`, the limit level will not be updated.
+    ///  
+    ///  # Returns
+    ///  - `Result<UpdatePositionResponse, AppError>`:
+    ///    - On success, returns an `UpdatePositionResponse` containing details of the updated position.
+    ///    - On failure, returns an `AppError` indicating the error encountered during the operation.
+    ///  
+    ///  # Errors
+    ///  This function returns an `AppError` in case of:
+    ///  - Invalid `deal_id` (e.g., deal doesn't exist).
+    ///  - Backend service issues or database failures.
+    ///  - Input validation errors for the `limit_level`.
+    ///  
+    ///  
+    ///  # Notes
+    ///  Ensure that the passed `deal_id` exists, and the `limit_level` (if provided) adheres
+    ///  to any required constraints specific to the application's domain logic.
+    ///  
+    ///
+    async fn update_level_in_position(
+        &self,
+        deal_id: &str,
+        limit_level: Option<f64>,
+    ) -> Result<UpdatePositionResponse, AppError>;
+
     /// Closes an existing position
     async fn close_position(
         &self,
