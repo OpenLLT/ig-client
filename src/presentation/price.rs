@@ -640,8 +640,12 @@ impl PriceData {
             }
         };
 
-        // Parse dealing flag
-        let dealing_flag = match get_field("DLG_FLAG").as_deref() {
+        // Parse dealing flag (case-insensitive to handle Lightstreamer lowercase conversion)
+        let dealing_flag = match get_field("DLG_FLAG")
+            .as_deref()
+            .map(|s| s.to_uppercase())
+            .as_deref()
+        {
             Some("CLOSED") => Some(DealingFlag::Closed),
             Some("CALL") => Some(DealingFlag::Call),
             Some("DEAL") => Some(DealingFlag::Deal),

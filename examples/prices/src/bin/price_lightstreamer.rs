@@ -27,7 +27,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     debug!("{ws_info:?}");
 
     // Create a subscription for a market
-    let epic = format!("PRICE:{}:DO.D.OTCDDAX.95.IP", ws_info.account_id);
+    let epic = format!("PRICE:{}:OP.D.OTCSPXWK.6720C.IP", ws_info.account_id);
 
     let mut subscription = Subscription::new(
         SubscriptionMode::Merge,
@@ -42,14 +42,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     let listener = Listener::new(callback);
-    subscription.set_data_adapter(Some("PRICING".to_string()))?;
-    subscription.set_requested_snapshot(Some(Snapshot::Yes))?;
+    // Data adapter for price data - use None for default or check IG_PRICING_ADAPTER env var
+    subscription.set_data_adapter(Some("Pricing".to_string()))?;
+    subscription.set_requested_snapshot(Some(Snapshot::No))?;
     subscription.add_listener(Box::new(listener));
 
     // Create a new Lightstreamer client instance and wrap it in an Arc<Mutex<>> so it can be shared across threads.
+    // Note: adapter_set should be None to use the default adapter set for IG Markets
     let client = Arc::new(Mutex::new(LightstreamerClient::new(
         Some(ws_info.server.as_str()),
-        Some("PRICING"),
+        None,
         Some(&ws_info.account_id),
         Some(&password),
     )?));

@@ -26,7 +26,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let password = ws_info.get_ws_password();
 
     // Create a subscription for a market
-    let epic = "MARKET:DO.D.OTCDDAX.95.IP".to_string();
+    let epic = "MARKET:OP.D.OTCSPXWK.6720C.IP".to_string();
 
     let mut subscription = Subscription::new(
         SubscriptionMode::Merge,
