@@ -23,21 +23,25 @@ impl RetryConfig {
         Self::default()
     }
 
-    /// Creates a new retry configuration with infinite retries and 10 second delay
+    /// Creates a new retry configuration with infinite retries
+    ///
+    /// Uses `RETRY_DELAY_SECS` environment variable if set, otherwise defaults to 10 seconds.
     #[must_use]
     pub fn infinite() -> Self {
         Self {
-            max_retry_count: None,  // infinite retries
-            retry_delay_secs: None, // use default 10 seconds
+            max_retry_count: None, // infinite retries
+            retry_delay_secs: get_env_or_none("RETRY_DELAY_SECS"),
         }
     }
 
     /// Creates a new retry configuration with a maximum number of retries
+    ///
+    /// Uses `RETRY_DELAY_SECS` environment variable if set, otherwise defaults to 10 seconds.
     #[must_use]
     pub fn with_max_retries(max_retries: u32) -> Self {
         Self {
             max_retry_count: Some(max_retries),
-            retry_delay_secs: None, // use default 10 seconds
+            retry_delay_secs: get_env_or_none("RETRY_DELAY_SECS"),
         }
     }
 
