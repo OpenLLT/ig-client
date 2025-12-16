@@ -513,6 +513,99 @@ impl From<&ItemUpdate> for PresentationMarketData {
     }
 }
 
+/// Represents a category of instruments in the IG Markets API
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default, PartialEq)]
+pub struct Category {
+    /// Category code identifier
+    pub code: String,
+    /// True if the category is non-tradeable
+    #[serde(rename = "nonTradeable")]
+    pub non_tradeable: bool,
+}
+
+/// Market status for category instruments
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum CategoryMarketStatus {
+    /// Market is offline
+    #[default]
+    Offline,
+    /// Market is closed
+    Closed,
+    /// Market is suspended
+    Suspended,
+    /// Market is in auction mode
+    OnAuction,
+    /// Market is in no-edits mode
+    OnAuctionNoEdits,
+    /// Market is open for edits only
+    EditsOnly,
+    /// Market allows closings only
+    ClosingsOnly,
+    /// Market allows deals but not edits
+    DealNoEdit,
+    /// Market is open for trades
+    Tradeable,
+}
+
+/// Represents an instrument within a category
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default, PartialEq)]
+pub struct CategoryInstrument {
+    /// Unique instrument identifier (EPIC)
+    pub epic: String,
+    /// Name of the instrument
+    #[serde(rename = "instrumentName")]
+    pub instrument_name: String,
+    /// Expiry date of the instrument
+    pub expiry: String,
+    /// Type of the instrument
+    #[serde(rename = "instrumentType")]
+    pub instrument_type: InstrumentType,
+    /// Size of an instrument lot
+    #[serde(rename = "lotSize")]
+    pub lot_size: Option<f64>,
+    /// True if the instrument can be traded OTC
+    #[serde(rename = "otcTradeable")]
+    pub otc_tradeable: bool,
+    /// Current status of the market
+    #[serde(rename = "marketStatus")]
+    pub market_status: CategoryMarketStatus,
+    /// Price delay time for market data in minutes
+    #[serde(rename = "delayTime")]
+    pub delay_time: Option<i64>,
+    /// Current bid price
+    pub bid: Option<f64>,
+    /// Current offer price
+    pub offer: Option<f64>,
+    /// Highest price for the current session
+    pub high: Option<f64>,
+    /// Lowest price for the current session
+    pub low: Option<f64>,
+    /// Net change in price
+    #[serde(rename = "netChange")]
+    pub net_change: Option<f64>,
+    /// Percentage change in price
+    #[serde(rename = "percentageChange")]
+    pub percentage_change: Option<f64>,
+    /// Time of last price update
+    #[serde(rename = "updateTime")]
+    pub update_time: Option<String>,
+    /// Multiplying factor to determine actual pip value
+    #[serde(rename = "scalingFactor")]
+    pub scaling_factor: Option<i64>,
+}
+
+/// Paging metadata for category instruments response
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default, PartialEq)]
+pub struct CategoryInstrumentsMetadata {
+    /// Current page number
+    #[serde(rename = "pageNumber")]
+    pub page_number: i32,
+    /// Number of items per page
+    #[serde(rename = "pageSize")]
+    pub page_size: i32,
+}
+
 /// Fields containing market price and status information
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct MarketFields {

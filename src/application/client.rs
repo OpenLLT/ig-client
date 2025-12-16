@@ -14,11 +14,11 @@ use crate::model::requests::{
     ClosePositionRequest, CreateOrderRequest, CreateWorkingOrderRequest, UpdatePositionRequest,
 };
 use crate::model::responses::{
-    ClosePositionResponse, CreateOrderResponse, CreateWorkingOrderResponse, UpdatePositionResponse,
+    CategoriesResponse, CategoryInstrumentsResponse, DBEntryResponse, HistoricalPricesResponse,
+    MarketNavigationResponse, MarketSearchResponse, MultipleMarketDetailsResponse,
 };
 use crate::model::responses::{
-    DBEntryResponse, HistoricalPricesResponse, MarketNavigationResponse, MarketSearchResponse,
-    MultipleMarketDetailsResponse,
+    ClosePositionResponse, CreateOrderResponse, CreateWorkingOrderResponse, UpdatePositionResponse,
 };
 use crate::model::streaming::{
     StreamingAccountDataField, StreamingChartField, StreamingMarketField, StreamingPriceField,
@@ -412,6 +412,51 @@ impl MarketService for Client {
 
         info!("Updated expiry dates for {} entries", vec_db_entries.len());
         Ok(vec_db_entries)
+    }
+
+    async fn get_categories(&self) -> Result<CategoriesResponse, AppError> {
+        info!("Getting all categories of instruments");
+        let result: CategoriesResponse = self.http_client.get("categories", Some(1)).await?;
+        debug!("{} categories found", result.categories.len());
+        Ok(result)
+    }
+
+    async fn get_category_instruments(
+        &self,
+        category_id: &str,
+        page_number: Option<i32>,
+        page_size: Option<i32>,
+    ) -> Result<CategoryInstrumentsResponse, AppError> {
+        let mut path = format!("categories/{}/instruments", category_id);
+
+        let mut query_params = Vec::new();
+        if let Some(page) = page_number {
+            query_params.push(format!("pageNumber={}", page));
+        }
+        if let Some(size) = page_size {
+            if size > 1000 {
+                return Err(AppError::InvalidInput(
+                    "pageSize cannot exceed 1000".to_string(),
+                ));
+            }
+            query_params.push(format!("pageSize={}", size));
+        }
+
+        if !query_params.is_empty() {
+            path = format!("{}?{}", path, query_params.join("&"));
+        }
+
+        info!(
+            "Getting instruments for category: {} (page: {:?}, size: {:?})",
+            category_id, page_number, page_size
+        );
+        let result: CategoryInstrumentsResponse = self.http_client.get(&path, Some(1)).await?;
+        debug!(
+            "{} instruments found in category {}",
+            result.instruments.len(),
+            category_id
+        );
+        Ok(result)
     }
 }
 

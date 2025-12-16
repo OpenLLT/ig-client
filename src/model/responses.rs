@@ -9,7 +9,8 @@ use crate::presentation::account::{
 };
 use crate::presentation::instrument::InstrumentType;
 use crate::presentation::market::{
-    HistoricalPrice, MarketData, MarketNavigationNode, MarketNode, PriceAllowance,
+    Category, CategoryInstrument, CategoryInstrumentsMetadata, HistoricalPrice, MarketData,
+    MarketNavigationNode, MarketNode, PriceAllowance,
 };
 use crate::presentation::order::{Direction, Status};
 use crate::utils::parsing::{deserialize_null_as_empty_vec, deserialize_nullable_status};
@@ -240,6 +241,96 @@ pub struct MarketNavigationResponse {
     /// List of markets at the current level
     #[serde(default, deserialize_with = "deserialize_null_as_empty_vec")]
     pub markets: Vec<MarketData>,
+}
+
+/// Response containing all categories of instruments enabled for the IG account
+#[derive(DebugPretty, DisplaySimple, Clone, Deserialize, Serialize, Default)]
+pub struct CategoriesResponse {
+    /// List of categories
+    pub categories: Vec<Category>,
+}
+
+impl CategoriesResponse {
+    /// Returns the number of categories in the response
+    ///
+    /// # Returns
+    /// Number of categories
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.categories.len()
+    }
+
+    /// Returns true if the response contains no categories
+    ///
+    /// # Returns
+    /// True if empty, false otherwise
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.categories.is_empty()
+    }
+
+    /// Returns a reference to the categories vector
+    ///
+    /// # Returns
+    /// Reference to the vector of categories
+    #[must_use]
+    pub fn categories(&self) -> &Vec<Category> {
+        &self.categories
+    }
+
+    /// Returns an iterator over the categories
+    ///
+    /// # Returns
+    /// Iterator over categories
+    pub fn iter(&self) -> impl Iterator<Item = &Category> {
+        self.categories.iter()
+    }
+}
+
+/// Response containing instruments for a specific category
+#[derive(DebugPretty, DisplaySimple, Clone, Deserialize, Serialize, Default)]
+pub struct CategoryInstrumentsResponse {
+    /// List of instruments in the category
+    pub instruments: Vec<CategoryInstrument>,
+    /// Paging metadata
+    pub metadata: Option<CategoryInstrumentsMetadata>,
+}
+
+impl CategoryInstrumentsResponse {
+    /// Returns the number of instruments in the response
+    ///
+    /// # Returns
+    /// Number of instruments
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.instruments.len()
+    }
+
+    /// Returns true if the response contains no instruments
+    ///
+    /// # Returns
+    /// True if empty, false otherwise
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.instruments.is_empty()
+    }
+
+    /// Returns a reference to the instruments vector
+    ///
+    /// # Returns
+    /// Reference to the vector of instruments
+    #[must_use]
+    pub fn instruments(&self) -> &Vec<CategoryInstrument> {
+        &self.instruments
+    }
+
+    /// Returns an iterator over the instruments
+    ///
+    /// # Returns
+    /// Iterator over instruments
+    pub fn iter(&self) -> impl Iterator<Item = &CategoryInstrument> {
+        self.instruments.iter()
+    }
 }
 
 /// Response containing user accounts

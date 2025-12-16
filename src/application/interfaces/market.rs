@@ -1,8 +1,8 @@
 use crate::error::AppError;
 use crate::model::requests::RecentPricesRequest;
 use crate::model::responses::{
-    DBEntryResponse, HistoricalPricesResponse, MarketNavigationResponse, MarketSearchResponse,
-    MultipleMarketDetailsResponse,
+    CategoriesResponse, CategoryInstrumentsResponse, DBEntryResponse, HistoricalPricesResponse,
+    MarketNavigationResponse, MarketSearchResponse, MultipleMarketDetailsResponse,
 };
 use crate::presentation::market::{MarketData, MarketDetails};
 use async_trait::async_trait;
@@ -137,4 +137,32 @@ pub trait MarketService: Send + Sync {
     /// # Returns
     /// * `Result<Vec<DBEntry>, AppError>` - Vector of database entries representing all markets
     async fn get_vec_db_entries(&self) -> Result<Vec<DBEntryResponse>, AppError>;
+
+    /// Gets all categories of instruments enabled for the IG account
+    ///
+    /// This method returns a list of all categories of instruments that are
+    /// available for trading on the account.
+    ///
+    /// # Returns
+    /// * `Result<CategoriesResponse, AppError>` - List of available categories
+    async fn get_categories(&self) -> Result<CategoriesResponse, AppError>;
+
+    /// Gets all instruments for a specific category
+    ///
+    /// This method returns all instruments belonging to the specified category,
+    /// with optional pagination support.
+    ///
+    /// # Arguments
+    /// * `category_id` - The identifier of the category
+    /// * `page_number` - Optional page number (default: 0)
+    /// * `page_size` - Optional page size (default: 150, max: 1000)
+    ///
+    /// # Returns
+    /// * `Result<CategoryInstrumentsResponse, AppError>` - List of instruments in the category
+    async fn get_category_instruments(
+        &self,
+        category_id: &str,
+        page_number: Option<i32>,
+        page_size: Option<i32>,
+    ) -> Result<CategoryInstrumentsResponse, AppError>;
 }
