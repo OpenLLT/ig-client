@@ -196,10 +196,12 @@ impl Auth {
     /// # Returns
     /// * WebSocket password in format "CST-{cst}|XST-{token}" or empty string if session is not available
     pub async fn get_ws_info(&self) -> WebsocketInfo {
-        let sess = self.login_v2().await.ok();
-        match sess {
-            Some(sess) => sess.get_websocket_info(),
-            None => WebsocketInfo::default(),
+        match self.login_v2().await {
+            Ok(sess) => sess.get_websocket_info(),
+            Err(e) => {
+                error!("Failed to get WebSocket info, login failed: {}", e);
+                WebsocketInfo::default()
+            }
         }
     }
 
