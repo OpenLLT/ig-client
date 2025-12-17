@@ -327,7 +327,19 @@ impl Auth {
             x_ig_api_key,
         };
 
-        let mut response: SessionResponse = response.json().await?;
+        // Get response body as text first for debugging
+        let body_text = response.text().await.map_err(|e| {
+            error!("Failed to read response body: {}", e);
+            AppError::Network(e)
+        })?;
+        debug!("Login response body length: {} bytes", body_text.len());
+
+        // Parse the JSON
+        let mut response: SessionResponse = serde_json::from_str(&body_text).map_err(|e| {
+            error!("Failed to parse login response JSON: {}", e);
+            error!("Response body: {}", body_text);
+            AppError::Deserialization(format!("Failed to parse login response: {}", e))
+        })?;
         let session = response.get_session_v2(&security_headers);
 
         Ok(session)
