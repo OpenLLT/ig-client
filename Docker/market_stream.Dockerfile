@@ -1,7 +1,7 @@
 # Dockerfile for testing market_lightstreamer_channel example
 # This helps verify that ig-client works correctly in a Docker container
 
-FROM rust:1.90-slim-bookworm AS builder
+FROM rust:1.92-slim-bookworm AS builder
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
