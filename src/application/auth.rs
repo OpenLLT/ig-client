@@ -131,8 +131,17 @@ impl Session {
     /// * `WebsocketInfo` containing endpoint and authentication tokens
     #[must_use]
     pub fn get_websocket_info(&self) -> WebsocketInfo {
+        // Ensure the server URL has the https:// prefix
+        let server = if self.lightstreamer_endpoint.starts_with("http://")
+            || self.lightstreamer_endpoint.starts_with("https://")
+        {
+            format!("{}/lightstreamer", self.lightstreamer_endpoint)
+        } else {
+            format!("https://{}/lightstreamer", self.lightstreamer_endpoint)
+        };
+
         WebsocketInfo {
-            server: self.lightstreamer_endpoint.clone() + "/lightstreamer",
+            server,
             cst: self.cst.clone(),
             x_security_token: self.x_security_token.clone(),
             account_id: self.account_id.clone(),
