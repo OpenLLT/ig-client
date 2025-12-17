@@ -507,3 +507,18 @@ impl Auth {
         Ok(())
     }
 }
+
+#[test]
+fn test_v2_response_deserialization() {
+    let json = r#"{"accountType":"CFD","accountInfo":{"balance":21065.86,"deposit":3033.31,"profitLoss":-285.27,"available":16659.01},"currencyIsoCode":"EUR","currencySymbol":"E","currentAccountId":"ZZZZZ","lightstreamerEndpoint":"https://demo-apd.marketdatasystems.com","accounts":[{"accountId":"Z405P5","accountName":"Turbo24","preferred":false,"accountType":"PHYSICAL"},{"accountId":"ZHJ5N","accountName":"DEMO_A","preferred":false,"accountType":"CFD"},{"accountId":"ZZZZZ","accountName":"Opciones","preferred":true,"accountType":"CFD"}],"clientId":"101290216","timezoneOffset":1,"hasActiveDemoAccounts":true,"hasActiveLiveAccounts":true,"trailingStopsEnabled":false,"reroutingEnvironment":null,"dealingEnabled":true}"#;
+
+    let result: Result<crate::model::auth::SessionResponse, _> = serde_json::from_str(json);
+    match &result {
+        Ok(r) => println!("Success: is_v2={}", r.is_v2()),
+        Err(e) => println!("Error: {}", e),
+    }
+    assert!(result.is_ok(), "Failed to deserialize V2 response");
+
+    let response: crate::model::auth::V2Response = serde_json::from_str(json).unwrap();
+    assert_eq!(response.account_type, "CFD");
+}
